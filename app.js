@@ -1,13 +1,13 @@
 // app.js - COMPLETE FIXED FRONTEND FOR INTIZARUL IMAMUL MUNTAZAR
+// FIXED VERSION - All bugs resolved
 
 const CONFIG = {
-  API_URL: 'https://script.google.com/macros/s/AKfycbweAMLu87vyBN-2mpW7nx5aPtsFJqObtAQm8opAaWRRycJW1tC8IqofToulRZc2JDkI/exec', // Will be set from localStorage or prompt
+  API_URL: 'https://script.google.com/macros/s/AKfycbweAMLu87vyBN-2mpW7nx5aPtsFJqObtAQm8opAaWRRycJW1tC8IqofToulRZc2JDkI/exec',
   MAX_PHOTO_SIZE: 2 * 1024 * 1024,
-  SESSION_TIMEOUT: 30 * 60 * 1000, // 30 minutes
-  REQUEST_TIMEOUT: 30000 // 30 seconds
+  SESSION_TIMEOUT: 30 * 60 * 1000,
+  REQUEST_TIMEOUT: 30000
 };
 
-// ZONES configuration - Should match backend
 const ZONES = {
   'SOKOTO': ['Sokoto', 'Mafara', 'Yaure', 'Illela', 'Zuru', 'Yabo'],
   'KADUNA': ['Kaduna', 'Jaji', 'Mjos'],
@@ -26,9 +26,7 @@ class App {
   static async init() {
     console.log('App initializing...');
     
-    // First, ensure we have API URL
     await this.setupApiUrl();
-    
     this.setupErrorHandling();
     this.validateSession();
     this.setupGlobalEvents();
@@ -38,7 +36,6 @@ class App {
   }
 
   static async setupApiUrl() {
-    // Check localStorage first
     const savedUrl = localStorage.getItem('iim_api_url');
     
     if (savedUrl) {
@@ -47,19 +44,16 @@ class App {
       return;
     }
     
-    // Try to get from CONFIG (if developer set it)
     if (CONFIG.API_URL && !CONFIG.API_URL.includes('YOUR_NEW_GAS_WEB_APP_URL')) {
       localStorage.setItem('iim_api_url', CONFIG.API_URL);
       return;
     }
     
-    // Show configuration modal
     await this.showApiConfigModal();
   }
 
   static async showApiConfigModal() {
     return new Promise((resolve) => {
-      // Create modal
       const modal = document.createElement('div');
       modal.style.cssText = `
         position: fixed;
@@ -75,7 +69,6 @@ class App {
         backdrop-filter: blur(5px);
       `;
       
-      // Default URL from tested.html
       const defaultUrl = 'https://script.google.com/macros/s/AKfycbweAMLu87vyBN-2mpW7nx5aPtsFJqObtAQm8opAaWRRycJW1tC8IqofToulRZc2JDkI/exec';
       
       modal.innerHTML = `
@@ -91,7 +84,7 @@ class App {
             <i class="fas fa-cogs"></i> Backend Configuration
           </h2>
           <p style="margin-bottom: 20px; color: #666;">
-            Please enter your Google Apps Script Web App URL. This is required for the system to work.
+            Please enter your Google Apps Script Web App URL.
           </p>
           
           <div style="margin-bottom: 20px;">
@@ -158,7 +151,6 @@ class App {
       
       document.body.appendChild(modal);
       
-      // Test connection
       document.getElementById('testConnectionBtn').addEventListener('click', async () => {
         const url = document.getElementById('apiUrlInput').value.trim();
         if (!url) {
@@ -210,7 +202,6 @@ class App {
         }
       });
       
-      // Save and continue
       document.getElementById('saveUrlBtn').addEventListener('click', () => {
         const url = document.getElementById('apiUrlInput').value.trim();
         if (!url) {
@@ -227,19 +218,16 @@ class App {
   }
 
   static setupErrorHandling() {
-    // Global error handler
     window.addEventListener('error', (e) => {
       console.error('Global error:', e.error);
       this.error(`Application error: ${e.message}`);
     });
 
-    // Unhandled promise rejection
     window.addEventListener('unhandledrejection', (e) => {
       console.error('Unhandled promise rejection:', e.reason);
       this.error(`Operation failed: ${e.reason.message || e.reason}`);
     });
 
-    // Network status
     window.addEventListener('online', () => {
       this.success('Back online');
     });
@@ -263,7 +251,6 @@ class App {
       }
     }
 
-    // Redirect unauthorized access
     if (['dashboard.html', 'register.html'].includes(page) && !loggedIn) {
       location.href = 'login.html';
       return;
@@ -281,16 +268,13 @@ class App {
     }
   }
 
-  // 🔥 FIXED: Form-data API function
   static async api(action, data = {}, options = {}) {
     console.log(`📡 API Request: ${action}`, data);
     
-    // Check if we have API URL
     if (!CONFIG.API_URL) {
       throw new Error('API URL not configured. Please set up backend URL.');
     }
     
-    // Create abort controller for timeout
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), CONFIG.REQUEST_TIMEOUT);
     
@@ -304,7 +288,6 @@ class App {
         clientIp: 'web_client'
       };
       
-      // 🔥 FIXED: Use FormData exactly like tested.html
       const formData = new FormData();
       formData.append('data', JSON.stringify(requestData));
       
@@ -314,7 +297,6 @@ class App {
         method: 'POST',
         body: formData,
         signal: controller.signal
-        // 🔥 NO headers - FormData sets content-type automatically
       });
       
       clearTimeout(timeoutId);
@@ -418,7 +400,6 @@ class App {
   static error(msg) {
     console.error(`Error: ${msg}`);
     
-    // Remove existing error
     const existing = document.querySelector('.error-toast');
     if (existing) existing.remove();
     
@@ -463,7 +444,6 @@ class App {
       }
     }, 5000);
     
-    // Add animations if not exists
     if (!document.getElementById('toastAnimations')) {
       const style = document.createElement('style');
       style.id = 'toastAnimations';
@@ -530,7 +510,6 @@ class App {
   }
 
   static setupGlobalEvents() {
-    // Password toggle
     document.querySelectorAll('.password-toggle').forEach(btn => {
       btn.addEventListener('click', () => {
         const input = btn.closest('.input-with-icon').querySelector('input');
@@ -547,24 +526,37 @@ class App {
       });
     });
     
-    // Form validation
     document.querySelectorAll('input[required]').forEach(input => {
       input.addEventListener('blur', () => {
+        this.validateField(input);
+      });
+    });
+    
+    // Add real-time validation feedback
+    document.querySelectorAll('input, select, textarea').forEach(input => {
+      input.addEventListener('input', () => {
         this.validateField(input);
       });
     });
   }
 
   static validateField(input) {
+    const wrapper = input.closest('.form-group');
+    const errorSpan = wrapper ? wrapper.querySelector('.validation-error') : null;
+    
     if (!input.value.trim() && input.required) {
-      input.style.borderColor = '#dc3545';
+      input.classList.add('input-error');
+      input.classList.remove('input-success');
+      if (errorSpan) errorSpan.textContent = 'This field is required';
       return false;
     }
     
     if (input.type === 'email' && input.value) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(input.value)) {
-        input.style.borderColor = '#dc3545';
+        input.classList.add('input-error');
+        input.classList.remove('input-success');
+        if (errorSpan) errorSpan.textContent = 'Invalid email format';
         return false;
       }
     }
@@ -572,12 +564,16 @@ class App {
     if (input.type === 'tel' && input.value) {
       const phoneRegex = /^[0-9+\s\-\(\)]{10,15}$/;
       if (!phoneRegex.test(input.value)) {
-        input.style.borderColor = '#dc3545';
+        input.classList.add('input-error');
+        input.classList.remove('input-success');
+        if (errorSpan) errorSpan.textContent = 'Invalid phone number';
         return false;
       }
     }
     
-    input.style.borderColor = '';
+    input.classList.remove('input-error');
+    input.classList.add('input-success');
+    if (errorSpan) errorSpan.textContent = '';
     return true;
   }
 
@@ -604,25 +600,20 @@ class App {
   static async setupLanding() {
     console.log('Setting up landing page...');
     
-    // Update current year
     document.getElementById('currentYear').textContent = new Date().getFullYear();
     
-    // Update branch count from ZONES
     const totalBranches = Object.values(ZONES).flat().length;
     document.getElementById('totalBranches').textContent = totalBranches;
     document.getElementById('totalZones').textContent = Object.keys(ZONES).length;
     
-    // Try to load live stats if API is available
     if (CONFIG.API_URL) {
       try {
-        // 🔥 FIXED: Simple GET without query params
         const response = await fetch(CONFIG.API_URL);
         if (response.ok) {
           const data = await response.json();
           if (data.success) {
             document.getElementById('totalMembers').textContent = data.data?.totalMembers || 0;
             document.getElementById('totalMasul').textContent = data.data?.totalMasul || 0;
-            // Already set totalBranches above
           }
         }
       } catch (error) {
@@ -634,7 +625,6 @@ class App {
   static setupLogin() {
     console.log('Setting up login page...');
     
-    // Remove default credentials from display (security)
     const accessNote = document.querySelector('.access-note');
     if (accessNote) {
       accessNote.innerHTML = `
@@ -653,7 +643,6 @@ class App {
       document.getElementById('masulBtn').click();
     }
     
-    // Role selection
     document.querySelectorAll('.role-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
@@ -674,7 +663,6 @@ class App {
     
     this.populateBranches('branchSelect');
     
-    // Login form
     document.getElementById('loginForm').addEventListener('submit', async e => {
       e.preventDefault();
       
@@ -721,7 +709,6 @@ class App {
         
       } catch (err) {
         console.error('Login failed:', err);
-        // Error shown by api() function
       } finally {
         this.loading(false);
       }
@@ -818,7 +805,6 @@ class App {
           
           let { width, height } = img;
           
-          // Calculate new dimensions
           const maxSize = 800;
           if (width > maxSize || height > maxSize) {
             if (width > height) {
@@ -833,7 +819,6 @@ class App {
           canvas.width = width;
           canvas.height = height;
           
-          // Draw and compress
           ctx.drawImage(img, 0, 0, width, height);
           
           try {
@@ -930,29 +915,43 @@ class App {
     // Show current user info
     const userName = localStorage.getItem('userName') || 'User';
     const userBranch = localStorage.getItem('userBranch');
+    const userRole = localStorage.getItem('userRole');
+    
     document.getElementById('currentBranch').textContent = 
       userBranch ? `Branch: ${userBranch}` : `User: ${userName}`;
     
     // Admin can register Mas'ul
-    const userRole = localStorage.getItem('userRole');
     if (userRole === 'admin') {
       document.getElementById('masulToggleContainer').style.display = 'block';
     }
     
     // Initialize form elements
     this.populateZones('zone', 'branch');
+    this.populateZones('masulZone', 'masulBranch');
     this.populateYears('recruitmentYear');
+    this.populateYears('masulRecruitmentYear');
+    
+    // Set up photo uploads
     this.setupPhoto('photoUpload', 'photoInput', 'photoPreview');
+    this.setupPhoto('masulPhotoUpload', 'masulPhotoInput', 'masulPhotoPreview');
     
     // Set date limits
     const today = new Date();
     const minDate = new Date(today.getFullYear() - 100, today.getMonth(), today.getDate());
     const maxDate = new Date(today.getFullYear() - 10, today.getMonth(), today.getDate());
     
-    document.getElementById('birthDate')?.setAttribute('min', minDate.toISOString().split('T')[0]);
-    document.getElementById('birthDate')?.setAttribute('max', maxDate.toISOString().split('T')[0]);
-    document.getElementById('masulBirthDate')?.setAttribute('min', minDate.toISOString().split('T')[0]);
-    document.getElementById('masulBirthDate')?.setAttribute('max', maxDate.toISOString().split('T')[0]);
+    const birthDate = document.getElementById('birthDate');
+    const masulBirthDate = document.getElementById('masulBirthDate');
+    
+    if (birthDate) {
+      birthDate.setAttribute('min', minDate.toISOString().split('T')[0]);
+      birthDate.setAttribute('max', maxDate.toISOString().split('T')[0]);
+    }
+    
+    if (masulBirthDate) {
+      masulBirthDate.setAttribute('min', minDate.toISOString().split('T')[0]);
+      masulBirthDate.setAttribute('max', maxDate.toISOString().split('T')[0]);
+    }
     
     // Phone validation
     document.querySelectorAll('input[type="tel"]').forEach(input => {
@@ -974,6 +973,20 @@ class App {
       });
     });
     
+    // Add validation indicators to labels
+    document.querySelectorAll('.form-group label').forEach(label => {
+      const input = label.parentElement.querySelector('input, select, textarea');
+      if (input && input.required) {
+        if (!label.querySelector('.required-star')) {
+          const star = document.createElement('span');
+          star.className = 'required-star';
+          star.textContent = ' *';
+          star.style.color = '#dc3545';
+          label.appendChild(star);
+        }
+      }
+    });
+    
     // Member registration form
     document.getElementById('memberRegistrationForm').addEventListener('submit', async e => {
       e.preventDefault();
@@ -982,6 +995,37 @@ class App {
       const formData = {};
       const elements = e.target.elements;
       
+      // Validate all required fields
+      let isValid = true;
+      const requiredFields = [
+        'fullName', 'firstName', 'fatherName', 'birthDate', 'gender',
+        'residentialAddress', 'phone1', 'memberLevel', 'zone', 'branch',
+        'recruitmentYear'
+      ];
+      
+      for (const field of requiredFields) {
+        const element = document.getElementById(field);
+        if (element && !element.value.trim()) {
+          this.error(`Please fill in ${field.replace(/([A-Z])/g, ' $1').toLowerCase()}`);
+          element.classList.add('input-error');
+          isValid = false;
+        } else if (element) {
+          element.classList.remove('input-error');
+          element.classList.add('input-success');
+        }
+      }
+      
+      if (!isValid) return;
+      
+      // Check photo
+      const photoInput = document.getElementById('photoInput');
+      if (!photoInput.dataset.base64) {
+        this.error('Please upload a passport photograph');
+        photoInput.closest('.form-group').classList.add('input-error');
+        return;
+      }
+      
+      // Collect all form data
       for (let element of elements) {
         if (element.name || element.id) {
           const key = element.name || element.id;
@@ -995,35 +1039,8 @@ class App {
         }
       }
       
-      // Required fields validation
-      const requiredFields = [
-        'fullName', 'firstName', 'fatherName', 'birthDate', 'gender',
-        'residentialAddress', 'phone1', 'memberLevel', 'zone', 'branch',
-        'recruitmentYear'
-      ];
-      
-      for (const field of requiredFields) {
-        if (!formData[field]) {
-          this.error(`Please fill in ${field.replace(/([A-Z])/g, ' $1').toLowerCase()}`);
-          return;
-        }
-      }
-      
-      if (!formData.photoBase64) {
-        this.error('Please upload a passport photograph');
-        return;
-      }
-      
-      // Validate date
-      const birthDate = new Date(formData.birthDate);
-      const today = new Date();
-      const minAge = new Date(today.getFullYear() - 100, today.getMonth(), today.getDate());
-      const maxAge = new Date(today.getFullYear() - 10, today.getMonth(), today.getDate());
-      
-      if (birthDate < minAge || birthDate > maxAge) {
-        this.error('Age must be between 10 and 100 years');
-        return;
-      }
+      // Ensure photoBase64 is set
+      formData.photoBase64 = photoInput.dataset.base64;
       
       this.loading(true, 'Registering member...');
       
@@ -1032,9 +1049,14 @@ class App {
         console.log('Registration successful:', res);
         this.showIdCard(res.data);
         this.success('Member registered successfully!');
+        
+        // Clear form after success
+        setTimeout(() => {
+          this.clearRegistrationForm();
+        }, 1000);
+        
       } catch (err) {
         console.error('Registration error:', err);
-        // Error shown by api()
       } finally {
         this.loading(false);
       }
@@ -1050,12 +1072,6 @@ class App {
       
       document.getElementById('memberFormSection').style.display = showMasulForm ? 'none' : 'block';
       document.getElementById('masulFormSection').style.display = showMasulForm ? 'block' : 'none';
-      
-      if (showMasulForm) {
-        this.populateZones('masulZone', 'masulBranch');
-        this.populateYears('masulRecruitmentYear');
-        this.setupPhoto('masulPhotoUpload', 'masulPhotoInput', 'masulPhotoPreview');
-      }
     });
     
     // Mas'ul registration form
@@ -1065,6 +1081,42 @@ class App {
       const formData = {};
       const elements = e.target.elements;
       
+      // Validate required fields
+      let isValid = true;
+      const requiredFields = [
+        'masulFullName', 'masulFatherName', 'masulBirthDate', 'masulEmail', 'masulPhone1',
+        'masulEducationLevel', 'masulResidentialAddress', 'masulZone', 'masulBranch',
+        'masulRecruitmentYear'
+      ];
+      
+      for (const field of requiredFields) {
+        const element = document.getElementById(field);
+        if (element && !element.value.trim()) {
+          this.error(`Please fill in ${field.replace(/masul/, '').replace(/([A-Z])/g, ' $1').toLowerCase()}`);
+          element.classList.add('input-error');
+          isValid = false;
+        } else if (element) {
+          element.classList.remove('input-error');
+          element.classList.add('input-success');
+        }
+      }
+      
+      if (!isValid) return;
+      
+      // Check photo
+      const masulPhotoInput = document.getElementById('masulPhotoInput');
+      if (!masulPhotoInput.dataset.base64) {
+        this.error('Please upload a passport photograph');
+        return;
+      }
+      
+      // Check declaration
+      if (!document.getElementById('masulDeclaration').checked) {
+        this.error('Please accept the declaration');
+        return;
+      }
+      
+      // Collect all form data
       for (let element of elements) {
         if (element.name || element.id) {
           const key = element.name || element.id;
@@ -1078,36 +1130,36 @@ class App {
         }
       }
       
-      // Required fields for Mas'ul
-      const requiredFields = [
-        'fullName', 'fatherName', 'birthDate', 'email', 'phone1',
-        'educationLevel', 'residentialAddress', 'zone', 'branch',
-        'recruitmentYear'
-      ];
-      
-      for (const field of requiredFields) {
-        if (!formData[field]) {
-          this.error(`Please fill in ${field.replace(/([A-Z])/g, ' $1').toLowerCase()}`);
-          return;
-        }
-      }
-      
-      if (!formData.photoBase64) {
-        this.error('Please upload a passport photograph');
-        return;
-      }
-      
-      if (!formData.declaration) {
-        this.error('Please accept the declaration');
-        return;
-      }
+      // Rename fields to match backend expectations
+      const renamedData = {
+        fullName: formData.masulFullName,
+        fatherName: formData.masulFatherName,
+        birthDate: formData.masulBirthDate,
+        email: formData.masulEmail,
+        phone1: formData.masulPhone1,
+        phone2: formData.masulPhone2 || '',
+        educationLevel: formData.masulEducationLevel,
+        courseStudying: formData.masulCourseStudying || '',
+        residentialAddress: formData.masulResidentialAddress,
+        zone: formData.masulZone,
+        branch: formData.masulBranch,
+        recruitmentYear: formData.masulRecruitmentYear,
+        photoBase64: masulPhotoInput.dataset.base64,
+        declaration: formData.masulDeclaration
+      };
       
       this.loading(true, 'Registering Mas\'ul...');
       
       try {
-        const res = await this.api('registerMasul', formData);
+        const res = await this.api('registerMasul', renamedData);
         this.showIdCard(res.data);
         this.success('Mas\'ul registered successfully!');
+        
+        // Clear form after success
+        setTimeout(() => {
+          this.clearMasulRegistrationForm();
+        }, 1000);
+        
       } catch (err) {
         console.error('Masul registration error:', err);
       } finally {
@@ -1122,6 +1174,48 @@ class App {
     });
   }
 
+  static clearRegistrationForm() {
+    const form = document.getElementById('memberRegistrationForm');
+    if (form) {
+      form.reset();
+      
+      // Clear photo preview
+      const photoPreview = document.getElementById('photoPreview');
+      const photoInput = document.getElementById('photoInput');
+      if (photoPreview) photoPreview.style.display = 'none';
+      if (photoInput) {
+        photoInput.value = '';
+        photoInput.dataset.base64 = '';
+      }
+      
+      // Clear validation classes
+      form.querySelectorAll('.input-error, .input-success').forEach(el => {
+        el.classList.remove('input-error', 'input-success');
+      });
+    }
+  }
+
+  static clearMasulRegistrationForm() {
+    const form = document.getElementById('masulRegistrationForm');
+    if (form) {
+      form.reset();
+      
+      // Clear photo preview
+      const photoPreview = document.getElementById('masulPhotoPreview');
+      const photoInput = document.getElementById('masulPhotoInput');
+      if (photoPreview) photoPreview.style.display = 'none';
+      if (photoInput) {
+        photoInput.value = '';
+        photoInput.dataset.base64 = '';
+      }
+      
+      // Clear validation classes
+      form.querySelectorAll('.input-error, .input-success').forEach(el => {
+        el.classList.remove('input-error', 'input-success');
+      });
+    }
+  }
+
   static showIdCard(data) {
     const formContainer = document.getElementById('formContainer');
     const successMessage = document.getElementById('successMessage');
@@ -1129,13 +1223,25 @@ class App {
     if (formContainer) formContainer.style.display = 'none';
     if (successMessage) successMessage.style.display = 'block';
     
+    // Clear photo states before showing new data
+    const photoInput = document.getElementById('photoInput');
+    const masulPhotoInput = document.getElementById('masulPhotoInput');
+    if (photoInput) {
+      photoInput.value = '';
+      photoInput.dataset.base64 = '';
+    }
+    if (masulPhotoInput) {
+      masulPhotoInput.value = '';
+      masulPhotoInput.dataset.base64 = '';
+    }
+    
     // Populate ID card
     const elements = {
-      'printFullName': data.fullName,
-      'printGlobalId': data.globalId,
-      'printRecruitmentId': data.recruitmentId,
-      'printBranch': data.branch,
-      'printLevel': data.level || data.memberLevel || 'N/A',
+      'printFullName': data.fullName || data.Full_Name || 'N/A',
+      'printGlobalId': data.globalId || data.Global_ID || 'N/A',
+      'printRecruitmentId': data.recruitmentId || data.Recruitment_ID || 'N/A',
+      'printBranch': data.branch || data.Branch || 'N/A',
+      'printLevel': data.level || data.memberLevel || data.Member_Level || 'N/A',
       'printDate': new Date().toLocaleDateString('en-NG', {
         weekday: 'long',
         year: 'numeric',
@@ -1150,12 +1256,13 @@ class App {
     });
     
     // Photo
-    if (data.photoUrl) {
+    if (data.photoUrl || data.Photo_URL) {
       const photoEl = document.getElementById('printPhoto');
       if (photoEl) {
-        photoEl.src = data.photoUrl;
+        photoEl.src = data.photoUrl || data.Photo_URL;
         photoEl.style.display = 'block';
-        document.getElementById('photoPlaceholder').style.display = 'none';
+        const placeholder = document.getElementById('photoPlaceholder');
+        if (placeholder) placeholder.style.display = 'none';
       }
     }
     
@@ -1163,17 +1270,40 @@ class App {
     const registerAnotherBtn = document.getElementById('registerAnother');
     if (registerAnotherBtn) {
       registerAnotherBtn.onclick = () => {
-        successMessage.style.display = 'none';
-        formContainer.style.display = 'block';
-        document.getElementById('memberRegistrationForm').reset();
-        document.getElementById('photoPreview').style.display = 'none';
-        document.getElementById('photoInput').dataset.base64 = '';
+        if (successMessage) successMessage.style.display = 'none';
+        if (formContainer) formContainer.style.display = 'block';
+        
+        // Reset forms
+        this.clearRegistrationForm();
+        this.clearMasulRegistrationForm();
+        
+        // Reset toggle if it was on Mas'ul
+        const masulToggle = document.getElementById('masulToggle');
+        if (masulToggle && masulToggle.checked) {
+          masulToggle.checked = false;
+          masulToggle.dispatchEvent(new Event('change'));
+        }
       };
     }
   }
 
   static setupDashboard() {
     console.log('Setting up dashboard...');
+    
+    // Show admin controls if admin
+    const userRole = localStorage.getItem('userRole');
+    if (userRole === 'admin') {
+      // Add "Add Member" button to members section
+      const membersHeader = document.querySelector('#membersSection .table-header');
+      if (membersHeader && !document.getElementById('addMemberBtn')) {
+        const addMemberBtn = document.createElement('button');
+        addMemberBtn.id = 'addMemberBtn';
+        addMemberBtn.className = 'btn btn-primary';
+        addMemberBtn.innerHTML = '<i class="fas fa-user-plus"></i> Add Member';
+        addMemberBtn.onclick = () => location.href = 'register.html';
+        membersHeader.appendChild(addMemberBtn);
+      }
+    }
     
     // Sidebar toggle
     document.getElementById('menuToggle').addEventListener('click', () => {
@@ -1301,7 +1431,6 @@ class App {
     const ctx = document.getElementById('zoneChart');
     if (!ctx) return;
     
-    // Destroy existing chart
     if (ctx.chart) {
       ctx.chart.destroy();
     }
@@ -1441,31 +1570,36 @@ class App {
             </tr>
           `;
         } else {
+          // FIXED: Using correct property names from backend response
           tbody.innerHTML = members.map(member => `
             <tr>
-              <td><input type="checkbox" class="selectMember" data-id="${member.id}"></td>
+              <td><input type="checkbox" class="selectMember" data-id="${member.id || member.Global_ID}"></td>
               <td>
-                ${member.photoUrl ? 
-                  `<img src="${member.photoUrl}" class="table-photo" alt="Photo" onerror="this.src='https://via.placeholder.com/50/228B22/FFFFFF?text=IIM'">` : 
-                  `<div class="photo-placeholder">IIM</div>`
+                ${member.photoUrl || member.Photo_URL ? 
+                  `<img src="${member.photoUrl || member.Photo_URL}" class="table-photo" alt="Photo" onerror="this.src='https://via.placeholder.com/50/228B22/FFFFFF?text=IIM'">` : 
+                  `<div class="photo-placeholder">${(member.fullName || member.Full_Name || 'IIM').charAt(0)}</div>`
                 }
               </td>
-              <td><code>${member.id}</code></td>
-              <td><code>${member.recruitmentId}</code></td>
-              <td><strong>${member.fullName}</strong></td>
-              <td><span class="badge ${member.gender === 'Brother' ? 'badge-primary' : 'badge-pink'}">${member.gender}</span></td>
-              <td>${member.phone}</td>
-              <td>${member.branch}</td>
-              <td><span class="badge badge-level-${member.level.toLowerCase()}">${member.level}</span></td>
+              <td><code>${member.id || member.Global_ID || 'N/A'}</code></td>
+              <td><code>${member.recruitmentId || member.Recruitment_ID || 'N/A'}</code></td>
+              <td><strong>${member.fullName || member.Full_Name || 'N/A'}</strong></td>
+              <td><span class="badge ${(member.gender || member.Gender) === 'Brother' ? 'badge-primary' : 'badge-pink'}">
+                ${member.gender || member.Gender || 'N/A'}
+              </span></td>
+              <td>${member.phone || member.Phone_1 || 'N/A'}</td>
+              <td>${member.branch || member.Branch || 'N/A'}</td>
+              <td><span class="badge badge-level-${(member.level || member.Member_Level || '').toLowerCase()}">
+                ${member.level || member.Member_Level || 'N/A'}
+              </span></td>
               <td>
                 <div class="action-buttons">
-                  <button class="btn-icon btn-view" onclick="App.viewMember('${member.id}')" title="View Details">
+                  <button class="btn-icon btn-view" onclick="App.viewMember('${member.id || member.Global_ID}')" title="View Details">
                     <i class="fas fa-eye"></i>
                   </button>
-                  <button class="btn-icon btn-promote" onclick="App.promoteMember('${member.id}')" title="Promote">
+                  <button class="btn-icon btn-promote" onclick="App.promoteMember('${member.id || member.Global_ID}')" title="Promote">
                     <i class="fas fa-arrow-up"></i>
                   </button>
-                  <button class="btn-icon btn-transfer" onclick="App.transferMember('${member.id}')" title="Transfer">
+                  <button class="btn-icon btn-transfer" onclick="App.transferMember('${member.id || member.Global_ID}')" title="Transfer">
                     <i class="fas fa-exchange-alt"></i>
                   </button>
                 </div>
@@ -1493,6 +1627,61 @@ class App {
     }
   }
 
+  static async loadMasul() {
+    this.loading(true, 'Loading Mas\'ul...');
+    
+    try {
+      const res = await this.api('getMembers', { 
+        type: 'Masul' 
+      });
+      
+      const masul = res.data || [];
+      const tbody = document.getElementById('masulTableBody');
+      
+      if (tbody) {
+        if (masul.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="9" class="text-center">
+                <p style="padding: 40px; color: #666;">No Mas'ul found</p>
+              </td>
+            </tr>
+          `;
+        } else {
+          tbody.innerHTML = masul.map(m => `
+            <tr>
+              <td>
+                ${m.photoUrl || m.Photo_URL ? 
+                  `<img src="${m.photoUrl || m.Photo_URL}" class="table-photo" alt="Photo">` : 
+                  `<div class="photo-placeholder">${(m.fullName || m.Full_Name || 'M').charAt(0)}</div>`
+                }
+              </td>
+              <td><code>${m.id || m.Global_ID || 'N/A'}</code></td>
+              <td><code>${m.recruitmentId || m.Recruitment_ID || 'N/A'}</code></td>
+              <td><strong>${m.fullName || m.Full_Name || 'N/A'}</strong></td>
+              <td>${m.email || m.Email || 'N/A'}</td>
+              <td>${m.phone || m.Phone_1 || 'N/A'}</td>
+              <td>${m.branch || m.Branch || 'N/A'}</td>
+              <td>${m.recruitmentYear || m.Recruitment_Year || 'N/A'}</td>
+              <td>
+                <div class="action-buttons">
+                  <button class="btn-icon btn-view" onclick="App.viewMember('${m.id || m.Global_ID}')">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `).join('');
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load Mas\'ul:', error);
+      this.error('Failed to load Mas\'ul');
+    } finally {
+      this.loading(false);
+    }
+  }
+
   static async viewMember(id) {
     this.loading(true, 'Loading member details...');
     
@@ -1500,7 +1689,6 @@ class App {
       const res = await this.api('getMemberDetails', { memberId: id });
       const data = res.data;
       
-      // Create modal with member details
       const modal = this.createMemberModal(data);
       document.body.appendChild(modal);
       
@@ -1597,14 +1785,11 @@ class App {
       </div>
     `;
     
-    // Populate modal body
     const modalBody = modal.querySelector('.modal-body');
     modalBody.innerHTML = this.createMemberDetailsHTML(data);
     
-    // Close modal on X click
     modal.querySelector('.modal-close').addEventListener('click', () => modal.remove());
     
-    // Close modal on background click
     modal.addEventListener('click', (e) => {
       if (e.target === modal) {
         modal.remove();

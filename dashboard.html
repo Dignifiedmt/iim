@@ -8,20 +8,15 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="style.css">
+    <!--script src="app.js" defer></script-->
 </head>
 <body>
     <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <div class="logo">
-                <img src="logo.png" alt="IIM Logo" class="logo-img">
-                <div class="logo-text">
-                    <h1 style="margin: 0; font-size: 1.2rem; color: #228B22; line-height: 1.2;">إنتظار الإمام المنتظر</h1>
-                    <p style="margin: 0; font-size: 0.7rem; color: #666; line-height: 1.2;">
-                        مؤسسة أبي الفضل العباس<br>
-                        (تربير روح د غنغر جكي)
-                    </p>
-                </div>
+                <img src="https://via.placeholder.com/50/228B22/FFFFFF?text=IIM" alt="IIM Logo" class="logo-img">
+                <div class="logo-text">Intizarul Imamul Muntazar</div>
             </div>
         </div>
         
@@ -29,9 +24,8 @@
             <div class="user-avatar">
                 <i class="fas fa-user-shield"></i>
             </div>
-            <div class="user-name" id="dashboardUserName">Administrator</div>
-            <div class="user-role" id="dashboardUserRole">System Admin</div>
-            <div class="user-branch" id="dashboardUserBranch" style="font-size: 0.8rem; color: #666; margin-top: 5px;"></div>
+            <div class="user-name">Administrator</div>
+            <div class="user-role">System Admin</div>
         </div>
         
         <div class="sidebar-menu">
@@ -84,9 +78,6 @@
                     <input type="text" id="globalSearch" placeholder="Search members, mas'ul, branches...">
                 </div>
                 <div class="topbar-actions">
-                    <a href="register.html" class="btn btn-primary" id="addMemberBtn" style="display: none;">
-                        <i class="fas fa-user-plus"></i> Add Member
-                    </a>
                     <button class="btn btn-accent" onclick="App.logout()">
                         <i class="fas fa-sign-out-alt"></i> Logout
                     </button>
@@ -115,9 +106,9 @@
                         <i class="fas fa-download"></i>
                         <span>Export Data</span>
                     </div>
-                    <div class="action-btn" onclick="App.backupSystem()">
-                        <i class="fas fa-database"></i>
-                        <span>Backup System</span>
+                    <div class="action-btn" onclick="App.switchSection('settings')">
+                        <i class="fas fa-cog"></i>
+                        <span>System Settings</span>
                     </div>
                 </div>
 
@@ -191,11 +182,11 @@
                     <div class="table-header">
                         <h3>All Members</h3>
                         <div class="table-actions">
-                            <a href="register.html" class="btn btn-primary" id="addMemberBtn2">
-                                <i class="fas fa-user-plus"></i> Add Member
-                            </a>
-                            <button class="btn btn-secondary" onclick="App.exportData('members')">
-                                <i class="fas fa-download"></i> Export
+                            <button class="btn btn-primary" id="viewSelected">
+                                <i class="fas fa-eye"></i> View Selected
+                            </button>
+                            <button class="btn btn-accent" id="promoteSelected">
+                                <i class="fas fa-arrow-up"></i> Promote Selected
                             </button>
                         </div>
                     </div>
@@ -228,38 +219,11 @@
 
             <!-- Mas'ul Section -->
             <div class="dashboard-section" id="masulSection">
-                <div class="filters">
-                    <div class="filter-group">
-                        <label>Search Mas'ul</label>
-                        <input type="text" id="masulSearch" placeholder="Search by name, email, or phone">
-                    </div>
-                    <div class="filter-group">
-                        <label>Zone</label>
-                        <select id="masulZoneFilter">
-                            <option value="">All Zones</option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <label>Branch</label>
-                        <select id="masulBranchFilter">
-                            <option value="">All Branches</option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <button class="btn btn-primary" id="applyMasulFilters">
-                            <i class="fas fa-filter"></i> Apply Filters
-                        </button>
-                        <button class="btn btn-secondary" onclick="App.exportData('masul')">
-                            <i class="fas fa-download"></i> Export
-                        </button>
-                    </div>
-                </div>
-
                 <div class="table-container">
                     <div class="table-header">
                         <h3>Mas'ul Leaders</h3>
                         <div class="table-actions">
-                            <button class="btn btn-primary" onclick="App.registerMasul()">
+                            <button class="btn btn-primary" onclick="App.showRegisterMasulModal()">
                                 <i class="fas fa-user-plus"></i> Add Mas'ul
                             </button>
                             <button class="btn btn-secondary" onclick="App.exportData('masul')">
@@ -292,22 +256,6 @@
 
             <!-- Promotions Section -->
             <div class="dashboard-section" id="promotionsSection">
-                <div class="filters">
-                    <div class="filter-group">
-                        <label>From Date</label>
-                        <input type="date" id="promotionFromDate">
-                    </div>
-                    <div class="filter-group">
-                        <label>To Date</label>
-                        <input type="date" id="promotionToDate">
-                    </div>
-                    <div class="filter-group">
-                        <button class="btn btn-primary" id="applyPromotionFilters">
-                            <i class="fas fa-filter"></i> Apply Filters
-                        </button>
-                    </div>
-                </div>
-
                 <div class="table-container">
                     <h3>Promotion Logs</h3>
                     <div class="table-responsive">
@@ -316,7 +264,6 @@
                                 <tr>
                                     <th>Date</th>
                                     <th>Member ID</th>
-                                    <th>Member Name</th>
                                     <th>Old Level</th>
                                     <th>New Level</th>
                                     <th>Admin</th>
@@ -333,22 +280,6 @@
 
             <!-- Transfers Section -->
             <div class="dashboard-section" id="transfersSection">
-                <div class="filters">
-                    <div class="filter-group">
-                        <label>From Date</label>
-                        <input type="date" id="transferFromDate">
-                    </div>
-                    <div class="filter-group">
-                        <label>To Date</label>
-                        <input type="date" id="transferToDate">
-                    </div>
-                    <div class="filter-group">
-                        <button class="btn btn-primary" id="applyTransferFilters">
-                            <i class="fas fa-filter"></i> Apply Filters
-                        </button>
-                    </div>
-                </div>
-
                 <div class="table-container">
                     <h3>Transfer Logs</h3>
                     <div class="table-responsive">
@@ -357,7 +288,6 @@
                                 <tr>
                                     <th>Date</th>
                                     <th>Member ID</th>
-                                    <th>Member Name</th>
                                     <th>From Branch</th>
                                     <th>To Branch</th>
                                     <th>Admin</th>
@@ -374,33 +304,6 @@
 
             <!-- Logs Section -->
             <div class="dashboard-section" id="logsSection">
-                <div class="filters">
-                    <div class="filter-group">
-                        <label>From Date</label>
-                        <input type="date" id="logFromDate">
-                    </div>
-                    <div class="filter-group">
-                        <label>To Date</label>
-                        <input type="date" id="logToDate">
-                    </div>
-                    <div class="filter-group">
-                        <label>Action</label>
-                        <select id="logActionFilter">
-                            <option value="">All Actions</option>
-                            <option value="register">Registration</option>
-                            <option value="promote">Promotion</option>
-                            <option value="transfer">Transfer</option>
-                            <option value="login">Login</option>
-                            <option value="settings">Settings Update</option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <button class="btn btn-primary" id="applyLogFilters">
-                            <i class="fas fa-filter"></i> Apply Filters
-                        </button>
-                    </div>
-                </div>
-
                 <div class="table-container">
                     <h3>System Activity Logs</h3>
                     <div class="table-responsive">
@@ -432,28 +335,12 @@
                         <form id="settingsForm">
                             <div class="form-grid">
                                 <div class="form-group">
-                                    <label for="adminAccessCode">Admin Access Code <span class="required-star">*</span></label>
-                                    <div class="input-with-icon">
-                                        <i class="fas fa-key"></i>
-                                        <input type="password" id="adminAccessCode" class="form-control" required 
-                                               placeholder="Enter new admin access code">
-                                        <button type="button" class="password-toggle" onclick="App.togglePassword('adminAccessCode')">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                    </div>
-                                    <span class="validation-error" id="adminCodeError"></span>
+                                    <label for="adminAccessCode">Admin Access Code <span class="required">*</span></label>
+                                    <input type="password" id="adminAccessCode" class="form-control" required>
                                 </div>
                                 <div class="form-group">
-                                    <label for="masulAccessCode">Mas'ul Access Code <span class="required-star">*</span></label>
-                                    <div class="input-with-icon">
-                                        <i class="fas fa-key"></i>
-                                        <input type="password" id="masulAccessCode" class="form-control" required 
-                                               placeholder="Enter new mas'ul access code">
-                                        <button type="button" class="password-toggle" onclick="App.togglePassword('masulAccessCode')">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                    </div>
-                                    <span class="validation-error" id="masulCodeError"></span>
+                                    <label for="masulAccessCode">Mas'ul Access Code <span class="required">*</span></label>
+                                    <input type="password" id="masulAccessCode" class="form-control" required>
                                 </div>
                             </div>
                             <div class="form-actions">
@@ -463,41 +350,8 @@
                                 <button type="button" class="btn btn-secondary" onclick="App.backupSystem()">
                                     <i class="fas fa-database"></i> Backup System
                                 </button>
-                                <button type="button" class="btn btn-accent" onclick="App.resetToDefaultCodes()">
-                                    <i class="fas fa-undo"></i> Reset to Default
-                                </button>
                             </div>
                         </form>
-                        
-                        <div class="settings-info" style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #e9ecef;">
-                            <h4><i class="fas fa-info-circle"></i> System Information</h4>
-                            <div class="info-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
-                                <div>
-                                    <strong>API Status:</strong> 
-                                    <span id="apiStatus" class="badge badge-success">Online</span>
-                                </div>
-                                <div>
-                                    <strong>Database:</strong> 
-                                    <span id="dbStatus">Connected</span>
-                                </div>
-                                <div>
-                                    <strong>Total Zones:</strong> 
-                                    <span id="totalZonesCount">9</span>
-                                </div>
-                                <div>
-                                    <strong>Total Branches:</strong> 
-                                    <span id="totalBranchesCount">25</span>
-                                </div>
-                                <div>
-                                    <strong>Last Backup:</strong> 
-                                    <span id="lastBackup">Never</span>
-                                </div>
-                                <div>
-                                    <strong>System Version:</strong> 
-                                    <span id="systemVersion">4.1.0</span>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -506,708 +360,16 @@
 
     <script src="app.js"></script>
     
-    <!-- Dashboard Specific Styles -->
-    <style>
-        /* Dashboard Specific Styles */
-        .sidebar .logo {
-            padding: 1rem;
-            text-align: center;
-        }
-        
-        .sidebar .logo-img {
-            width: 50px;
-            height: 50px;
-            margin-bottom: 0.5rem;
-        }
-        
-        .sidebar .logo-text h1 {
-            font-size: 1.1rem;
-            margin-bottom: 0.25rem;
-            color: #228B22;
-        }
-        
-        .sidebar .logo-text p {
-            font-size: 0.7rem;
-            line-height: 1.2;
-            color: #666;
-        }
-        
-        .user-profile {
-            text-align: center;
-            padding: 1.5rem 1rem;
-            border-bottom: 1px solid #e9ecef;
-        }
-        
-        .user-avatar {
-            width: 60px;
-            height: 60px;
-            background: #228B22;
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 1rem;
-            font-size: 1.5rem;
-        }
-        
-        .user-name {
-            font-weight: 600;
-            font-size: 1.1rem;
-            color: #343a40;
-        }
-        
-        .user-role {
-            color: #228B22;
-            font-weight: 500;
-            margin-top: 0.25rem;
-        }
-        
-        .user-branch {
-            background: #e9ecef;
-            padding: 0.25rem 0.75rem;
-            border-radius: 20px;
-            display: inline-block;
-            margin-top: 0.5rem;
-            font-size: 0.85rem;
-        }
-        
-        /* Topbar Improvements */
-        .topbar {
-            padding: 1rem 1.5rem;
-            background: white;
-            border-bottom: 1px solid #e9ecef;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        
-        .topbar-left {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-        
-        .menu-toggle {
-            background: none;
-            border: none;
-            font-size: 1.25rem;
-            color: #6c757d;
-            cursor: pointer;
-            padding: 0.5rem;
-            border-radius: 5px;
-            transition: all 0.3s ease;
-        }
-        
-        .menu-toggle:hover {
-            background: #f8f9fa;
-            color: #228B22;
-        }
-        
-        .page-title {
-            margin: 0;
-            font-size: 1.5rem;
-            color: #343a40;
-            font-weight: 600;
-        }
-        
-        .topbar-search {
-            position: relative;
-            width: 300px;
-        }
-        
-        .topbar-search i {
-            position: absolute;
-            left: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #6c757d;
-        }
-        
-        .topbar-search input {
-            width: 100%;
-            padding: 0.75rem 1rem 0.75rem 2.5rem;
-            border: 1px solid #ced4da;
-            border-radius: 30px;
-            font-size: 0.9rem;
-            transition: all 0.3s ease;
-        }
-        
-        .topbar-search input:focus {
-            outline: none;
-            border-color: #228B22;
-            box-shadow: 0 0 0 0.2rem rgba(34, 139, 34, 0.25);
-        }
-        
-        .topbar-actions {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-        
-        /* Content Area */
-        .content {
-            padding: 1.5rem;
-            background: #f8f9fa;
-            min-height: calc(100vh - 70px);
-        }
-        
-        .dashboard-section {
-            display: none;
-            animation: fadeIn 0.5s ease;
-        }
-        
-        .dashboard-section.active {
-            display: block;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        /* Stats Grid */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-        
-        .stat-card {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-            text-align: center;
-            transition: all 0.3s ease;
-            border: 1px solid #e9ecef;
-        }
-        
-        .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            border-color: #228B22;
-        }
-        
-        .stat-number {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: #228B22;
-            display: block;
-            line-height: 1.2;
-        }
-        
-        .stat-label {
-            color: #6c757d;
-            font-size: 0.9rem;
-            display: block;
-            margin-top: 0.5rem;
-        }
-        
-        /* Quick Actions */
-        .quick-actions {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-        
-        .action-btn {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            border: 1px solid #e9ecef;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 1rem;
-        }
-        
-        .action-btn:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            border-color: #228B22;
-            background: #f8fff8;
-        }
-        
-        .action-btn i {
-            font-size: 2rem;
-            color: #228B22;
-        }
-        
-        .action-btn span {
-            font-weight: 500;
-            color: #343a40;
-        }
-        
-        /* Charts */
-        .charts-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-        
-        .chart-card {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-            border: 1px solid #e9ecef;
-        }
-        
-        .chart-card h3 {
-            margin: 0 0 1rem 0;
-            color: #343a40;
-            font-size: 1.1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .chart-card h3 i {
-            color: #228B22;
-        }
-        
-        /* Recent Activity */
-        .recent-activity {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-            border: 1px solid #e9ecef;
-        }
-        
-        .recent-activity h3 {
-            margin: 0 0 1rem 0;
-            color: #343a40;
-            font-size: 1.1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .recent-activity h3 i {
-            color: #228B22;
-        }
-        
-        .activity-list {
-            max-height: 300px;
-            overflow-y: auto;
-        }
-        
-        .activity-item {
-            padding: 1rem;
-            border-bottom: 1px solid #f1f3f4;
-            display: grid;
-            grid-template-columns: 150px 1fr 100px;
-            gap: 1rem;
-            align-items: center;
-        }
-        
-        .activity-item:last-child {
-            border-bottom: none;
-        }
-        
-        .activity-time {
-            font-size: 0.85rem;
-            color: #6c757d;
-        }
-        
-        .activity-desc {
-            font-size: 0.95rem;
-            line-height: 1.5;
-        }
-        
-        .activity-role {
-            font-size: 0.85rem;
-            color: #228B22;
-            font-weight: 500;
-            text-align: right;
-        }
-        
-        /* Filters */
-        .filters {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-            align-items: flex-end;
-            background: white;
-            padding: 1.5rem;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-            border: 1px solid #e9ecef;
-        }
-        
-        .filter-group {
-            display: flex;
-            flex-direction: column;
-            min-width: 180px;
-        }
-        
-        .filter-group label {
-            font-size: 0.85rem;
-            font-weight: 500;
-            margin-bottom: 0.5rem;
-            color: #495057;
-        }
-        
-        .filter-group input,
-        .filter-group select {
-            padding: 0.75rem;
-            border: 1px solid #ced4da;
-            border-radius: 6px;
-            font-size: 0.9rem;
-            transition: all 0.3s ease;
-        }
-        
-        .filter-group input:focus,
-        .filter-group select:focus {
-            outline: none;
-            border-color: #228B22;
-            box-shadow: 0 0 0 0.2rem rgba(34, 139, 34, 0.25);
-        }
-        
-        /* Table Container */
-        .table-container {
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-            border: 1px solid #e9ecef;
-            overflow: hidden;
-        }
-        
-        .table-header {
-            padding: 1.5rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #e9ecef;
-            background: #f8f9fa;
-        }
-        
-        .table-header h3 {
-            margin: 0;
-            color: #343a40;
-            font-size: 1.2rem;
-        }
-        
-        .table-actions {
-            display: flex;
-            gap: 0.75rem;
-        }
-        
-        .table-responsive {
-            overflow-x: auto;
-        }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 800px;
-        }
-        
-        thead {
-            background: #f8f9fa;
-        }
-        
-        th {
-            padding: 1rem;
-            text-align: left;
-            font-weight: 600;
-            color: #495057;
-            border-bottom: 2px solid #e9ecef;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        td {
-            padding: 1rem;
-            border-bottom: 1px solid #e9ecef;
-            vertical-align: middle;
-        }
-        
-        tbody tr:hover {
-            background: #f8fff8;
-        }
-        
-        /* Table Photo */
-        .table-photo {
-            width: 40px;
-            height: 40px;
-            object-fit: cover;
-            border-radius: 50%;
-            border: 2px solid #228B22;
-        }
-        
-        .photo-placeholder {
-            width: 40px;
-            height: 40px;
-            background: #228B22;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            font-weight: bold;
-            font-size: 0.9rem;
-        }
-        
-        /* Badges */
-        .badge {
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            display: inline-block;
-        }
-        
-        .badge-primary {
-            background: #228B22;
-            color: white;
-        }
-        
-        .badge-pink {
-            background: #e83e8c;
-            color: white;
-        }
-        
-        .badge-success {
-            background: #28a745;
-            color: white;
-        }
-        
-        .badge-warning {
-            background: #ffc107;
-            color: #212529;
-        }
-        
-        .badge-level-bakiyatullah { background: #17a2b8; color: white; }
-        .badge-level-ansarullah { background: #28a745; color: white; }
-        .badge-level-ghalibun { background: #ffc107; color: #212529; }
-        .badge-level-graduate { background: #6c757d; color: white; }
-        
-        /* Action Buttons */
-        .action-buttons {
-            display: flex;
-            gap: 0.5rem;
-        }
-        
-        .btn-icon {
-            width: 32px;
-            height: 32px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-        }
-        
-        .btn-icon:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        }
-        
-        .btn-view { background: #17a2b8; color: white; }
-        .btn-promote { background: #28a745; color: white; }
-        .btn-transfer { background: #ffc107; color: #212529; }
-        
-        /* Pagination */
-        .pagination {
-            padding: 1rem;
-            display: flex;
-            justify-content: center;
-            gap: 0.5rem;
-            border-top: 1px solid #e9ecef;
-        }
-        
-        /* Settings Form */
-        .card {
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-            border: 1px solid #e9ecef;
-            overflow: hidden;
-        }
-        
-        .card-header {
-            padding: 1.5rem;
-            background: #f8f9fa;
-            border-bottom: 1px solid #e9ecef;
-        }
-        
-        .card-header h3 {
-            margin: 0;
-            color: #343a40;
-            font-size: 1.2rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .card-body {
-            padding: 1.5rem;
-        }
-        
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
-            margin-bottom: 1.5rem;
-        }
-        
-        .form-group {
-            margin-bottom: 1rem;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            color: #495057;
-        }
-        
-        .input-with-icon {
-            position: relative;
-        }
-        
-        .input-with-icon i {
-            position: absolute;
-            left: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #6c757d;
-        }
-        
-        .input-with-icon input {
-            width: 100%;
-            padding: 0.75rem 1rem 0.75rem 2.5rem;
-            border: 1px solid #ced4da;
-            border-radius: 6px;
-            font-size: 0.9rem;
-        }
-        
-        .password-toggle {
-            position: absolute;
-            right: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            color: #6c757d;
-            cursor: pointer;
-            padding: 0.25rem;
-        }
-        
-        .form-actions {
-            display: flex;
-            gap: 0.75rem;
-            margin-top: 1.5rem;
-        }
-        
-        /* Responsive Design */
-        @media (max-width: 1200px) {
-            .sidebar {
-                transform: translateX(-100%);
-            }
-            
-            .sidebar.active {
-                transform: translateX(0);
-            }
-            
-            .main-content {
-                margin-left: 0;
-            }
-        }
-        
-        @media (max-width: 992px) {
-            .charts-container {
-                grid-template-columns: 1fr;
-            }
-            
-            .form-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-        
-        @media (max-width: 768px) {
-            .topbar {
-                flex-direction: column;
-                gap: 1rem;
-                padding: 1rem;
-            }
-            
-            .topbar-left, .topbar-right {
-                width: 100%;
-            }
-            
-            .topbar-search {
-                width: 100%;
-                margin-bottom: 1rem;
-            }
-            
-            .filters {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            
-            .filter-group {
-                min-width: 100%;
-            }
-            
-            .table-header {
-                flex-direction: column;
-                gap: 1rem;
-                align-items: stretch;
-            }
-            
-            .table-actions {
-                flex-direction: column;
-            }
-            
-            .action-item {
-                grid-template-columns: 1fr;
-                gap: 0.5rem;
-            }
-            
-            .activity-item {
-                grid-template-columns: 1fr;
-                gap: 0.5rem;
-            }
-            
-            .activity-role {
-                text-align: left;
-            }
-        }
-        
-        /* Print Styles */
-        @media print {
-            .sidebar, .topbar, .filters, .table-actions, .pagination, .form-actions {
-                display: none !important;
-            }
-            
-            .main-content {
-                margin-left: 0 !important;
-            }
-            
-            .content {
-                padding: 0 !important;
-            }
-            
-            .table-container {
-                box-shadow: none !important;
-                border: 1px solid #000 !important;
-            }
-        }
-    </style>
+    <!-- Optional: Add initialization script -->
+    <script>
+        // Wait for DOM and app.js to load
+        if (typeof App !== 'undefined') {
+            document.addEventListener('DOMContentLoaded', function() {
+                App.init();
+            });
+        } else {
+            console.error('App.js not loaded properly');
+        }
+    </script>
 </body>
 </html>

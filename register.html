@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration - Intizarul Imamul Muntazar</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Additional styles for registration page */
+        .photo-placeholder {
+            width: 100px;
+            height: 100px;
+            background: #228B22;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+        
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .badge-primary { background: #228B22; color: white; }
+        .badge-pink { background: #e83e8c; color: white; }
+        .badge-level-bakiyatullah { background: #17a2b8; color: white; }
+        .badge-level-ansarullah { background: #28a745; color: white; }
+        .badge-level-ghalibun { background: #ffc107; color: #212529; }
+        .badge-level-graduate { background: #6c757d; color: white; }
+        
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .btn-icon {
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .btn-view { background: #17a2b8; color: white; }
+        .btn-promote { background: #28a745; color: white; }
+        .btn-transfer { background: #ffc107; color: #212529; }
+        
+        /* Textarea specific styles */
+        textarea.form-control {
+            min-height: 100px;
+            resize: vertical;
+            font-family: inherit;
+            line-height: 1.5;
+            padding: 12px;
+        }
+        
+        .form-grid textarea {
+            grid-column: 1 / -1;
+        }
+        
+        /* Photo upload area */
+        .photo-upload {
+            border: 3px dashed #ddd;
+            padding: 40px 20px;
+            text-align: center;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+        
+        .photo-upload:hover {
+            border-color: #228B22;
+            background: rgba(34, 139, 34, 0.05);
+        }
+        
+        .photo-upload i {
+            font-size: 48px;
+            color: #228B22;
+            margin-bottom: 15px;
+        }
+        
+        .photo-preview {
+            max-width: 200px;
+            max-height: 200px;
+            margin: 15px auto 0;
+            display: block;
+            border-radius: 10px;
+            border: 3px solid #228B22;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        /* Form tabs */
+        .form-tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-radius: 10px 10px 0 0;
+            overflow: hidden;
+        }
+        
+        .form-tab {
+            flex: 1;
+            padding: 15px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .form-tab:hover {
+            background: rgba(34, 139, 34, 0.1);
+        }
+        
+        .form-tab.active {
+            background: #228B22;
+            color: white;
+        }
+        
+        /* Success message */
+        .success-message {
+            max-width: 800px;
+            margin: 40px auto;
+            text-align: center;
+            padding: 40px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .success-icon i {
+            font-size: 80px;
+            color: #28a745;
+            margin-bottom: 20px;
+        }
+        
+        /* ID Card */
+        .id-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+            border: 3px solid #228B22;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 30px auto;
+            max-width: 600px;
+            box-shadow: 0 10px 30px rgba(34, 139, 34, 0.15);
+        }
+        
+        .id-photo-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .id-photo {
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 10px;
+            border: 3px solid #228B22;
+        }
+        
+        .id-photo-placeholder {
+            width: 150px;
+            height: 150px;
+            background: #228B22;
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            font-size: 32px;
+            font-weight: bold;
+        }
+        
+        .id-details {
+            text-align: left;
+        }
+        
+        .id-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .id-item:last-child {
+            border-bottom: none;
+        }
+        
+        .id-label {
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        .id-value {
+            font-weight: 700;
+            color: #228B22;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .id-item {
+                flex-direction: column;
+                gap: 5px;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .btn-icon {
+                width: 100%;
+                margin-bottom: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="navbar">
+        <div class="container navbar-container">
+            <div class="logo">
+                <img src="https://via.placeholder.com/40/228B22/FFFFFF?text=IIM" alt="IIM Logo" class="logo-img">
+                <div class="logo-text">Intizarul <span>Imamul Muntazar</span></div>
+            </div>
+            <div class="user-info">
+                <div class="user-branch" id="currentBranch">Branch: Loading...</div>
+                <div class="user-badge">
+                    <i class="fas fa-users"></i>
+                    <span>Branch Mas'ul</span>
+                </div>
+                <button class="btn btn-accent" onclick="App.logout()">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container container-lg">
+        <!-- Registration Header -->
+        <div class="registration-header bg-primary text-white">
+            <div class="header-content">
+                <div class="header-title">
+                    <i class="fas fa-user-plus"></i>
+                    <h1 id="formTitle">Member Registration (Muntazirun)</h1>
+                </div>
+                <p class="header-subtitle">
+                    Register new members with the form below. All fields marked with <span class="required">*</span> are required.
+                    Please ensure information is accurate before submission.
+                </p>
+                
+                <!-- Mas'ul Toggle (Admin Only) -->
+                <div class="masul-toggle" id="masulToggleContainer" style="display: none; margin-top: 1.5rem;">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="masulToggle">
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <span style="margin-left: 1rem; font-weight: 500;">Register Mas'ul (Admin Only)</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Registration Form Container -->
+        <div id="formContainer">
+            <!-- Member Registration Form -->
+            <div class="form-container" id="memberFormSection">
+                <div class="form-tabs">
+                    <button class="form-tab active" data-tab="personal">
+                        <i class="fas fa-user"></i> Personal Information
+                    </button>
+                    <button class="form-tab" data-tab="contact">
+                        <i class="fas fa-address-book"></i> Contact & Address
+                    </button>
+                    <button class="form-tab" data-tab="membership">
+                        <i class="fas fa-users"></i> Membership Details
+                    </button>
+                </div>
+
+                <form id="memberRegistrationForm">
+                    <!-- Personal Information Tab -->
+                    <div class="form-section active" id="personalTab">
+                        <h2 class="section-title">
+                            <i class="fas fa-user-circle"></i> Personal Information
+                        </h2>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="fullName">Cikakken Suna <span class="required">*</span></label>
+                                <input type="text" id="fullName" class="form-control" required placeholder="Enter full name">
+                            </div>
+                            <div class="form-group">
+                                <label for="firstName">Suna <span class="required">*</span></label>
+                                <input type="text" id="firstName" class="form-control" required placeholder="Enter first name">
+                            </div>
+                            <div class="form-group">
+                                <label for="fatherName">Sunan Mahaifi <span class="required">*</span></label>
+                                <input type="text" id="fatherName" class="form-control" required placeholder="Enter father's name">
+                            </div>
+                            <div class="form-group">
+                                <label for="grandfatherName">Sunan Kaka</label>
+                                <input type="text" id="grandfatherName" class="form-control" placeholder="Enter grandfather's name">
+                            </div>
+                            <div class="form-group">
+                                <label for="birthDate">Ranar Haihuwa <span class="required">*</span></label>
+                                <input type="date" id="birthDate" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="gender">Gender <span class="required">*</span></label>
+                                <select id="gender" class="form-control" required>
+                                    <option value="">Select Gender</option>
+                                    <option value="Brother">Brother</option>
+                                    <option value="Sister">Sister</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Contact & Address Tab -->
+                    <div class="form-section" id="contactTab">
+                        <h2 class="section-title">
+                            <i class="fas fa-home"></i> Contact & Address
+                        </h2>
+                        <div class="form-grid">
+                            <div class="form-group" style="grid-column: 1 / -1;">
+                                <label for="residentialAddress">Adireshin Wajan Zama <span class="required">*</span></label>
+                                <textarea id="residentialAddress" class="form-control" required 
+                                          placeholder="Enter full residential address" rows="4"></textarea>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="neighborhood">Unguwa</label>
+                                <input type="text" id="neighborhood" class="form-control" placeholder="Enter neighborhood">
+                            </div>
+                            <div class="form-group">
+                                <label for="localGovernment">Karamar Hukuma</label>
+                                <input type="text" id="localGovernment" class="form-control" placeholder="Enter local government">
+                            </div>
+                            <div class="form-group">
+                                <label for="state">Jaha</label>
+                                <input type="text" id="state" class="form-control" placeholder="Enter state">
+                            </div>
+                            <div class="form-group">
+                                <label for="phone1">Lambar Waya 1 <span class="required">*</span></label>
+                                <input type="tel" id="phone1" class="form-control" required placeholder="Enter primary phone number">
+                            </div>
+                            <div class="form-group">
+                                <label for="phone2">Lambar Waya 2</label>
+                                <input type="tel" id="phone2" class="form-control" placeholder="Enter secondary phone number">
+                            </div>
+                            
+                            <div class="form-group" style="grid-column: 1 / -1;">
+                                <label for="parentsGuardians">Sunan Iyaye/Masu kula</label>
+                                <input type="text" id="parentsGuardians" class="form-control" placeholder="Enter parents/guardians names">
+                            </div>
+                            
+                            <div class="form-group" style="grid-column: 1 / -1;">
+                                <label for="parentAddress">Adireshin Iyaye/masu kula</label>
+                                <textarea id="parentAddress" class="form-control" 
+                                          placeholder="Enter parents/guardians address" rows="3"></textarea>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="parentNeighborhood">Unguwa (Parents)</label>
+                                <input type="text" id="parentNeighborhood" class="form-control" placeholder="Enter parents neighborhood">
+                            </div>
+                            <div class="form-group">
+                                <label for="parentLGA">Ƙaramar Hukuma (Parents)</label>
+                                <input type="text" id="parentLGA" class="form-control" placeholder="Enter parents LGA">
+                            </div>
+                            <div class="form-group">
+                                <label for="parentState">Jaha (Parents)</label>
+                                <input type="text" id="parentState" class="form-control" placeholder="Enter parents state">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Membership Details Tab -->
+                    <div class="form-section" id="membershipTab">
+                        <h2 class="section-title">
+                            <i class="fas fa-users"></i> Membership Details
+                        </h2>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="zone">Zone <span class="required">*</span></label>
+                                <select id="zone" class="form-control" required>
+                                    <option value="">Select Zone</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="branch">Branch <span class="required">*</span></label>
+                                <select id="branch" class="form-control" required>
+                                    <option value="">Select Branch</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="recruitmentYear">Year of Recruitment <span class="required">*</span></label>
+                                <select id="recruitmentYear" class="form-control" required>
+                                    <option value="">Select Year</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="memberLevel">Level Admitted To <span class="required">*</span></label>
+                                <select id="memberLevel" class="form-control" required>
+                                    <option value="">Select Level</option>
+                                    <option value="Bakiyatullah">Bakiyatullah</option>
+                                    <option value="Ansarullah">Ansarullah</option>
+                                    <option value="Ghalibun">Ghalibun</option>
+                                    <option value="Graduate">Graduate</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="grid-column: 1 / -1;">
+                                <label for="photoInput">Passport Photograph <span class="required">*</span></label>
+                                <div class="photo-upload" id="photoUpload">
+                                    <i class="fas fa-camera"></i>
+                                    <p>Click to upload or drag & drop passport photograph</p>
+                                    <p><small>Maximum size: 2MB | Format: JPG, PNG</small></p>
+                                    <img id="photoPreview" class="photo-preview" alt="Photo preview" style="display: none;">
+                                </div>
+                                <input type="file" id="photoInput" accept="image/*" style="display: none;" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Register Member
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="location.reload()">
+                            <i class="fas fa-redo"></i> Clear Form
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Mas'ul Registration Form (Hidden by default) -->
+            <div class="form-container" id="masulFormSection" style="display: none;">
+                <div class="form-header">
+                    <h2><i class="fas fa-user-shield"></i> Mas'ul Registration Form</h2>
+                    <p>Complete all fields below to register a new Mas'ul leader</p>
+                </div>
+                
+                <form id="masulRegistrationForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="masulFullName">Full Name <span class="required">*</span></label>
+                            <input type="text" id="masulFullName" class="form-control" required placeholder="Enter full name">
+                        </div>
+                        <div class="form-group">
+                            <label for="masulFatherName">Father's Name <span class="required">*</span></label>
+                            <input type="text" id="masulFatherName" class="form-control" required placeholder="Enter father's name">
+                        </div>
+                        <div class="form-group">
+                            <label for="masulBirthDate">Date of Birth <span class="required">*</span></label>
+                            <input type="date" id="masulBirthDate" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="masulEmail">Email <span class="required">*</span></label>
+                            <input type="email" id="masulEmail" class="form-control" required placeholder="Enter email address">
+                        </div>
+                        <div class="form-group">
+                            <label for="masulPhone1">Phone Number 1 <span class="required">*</span></label>
+                            <input type="tel" id="masulPhone1" class="form-control" required placeholder="Enter primary phone number">
+                        </div>
+                        <div class="form-group">
+                            <label for="masulPhone2">Phone Number 2</label>
+                            <input type="tel" id="masulPhone2" class="form-control" placeholder="Enter secondary phone number">
+                        </div>
+                        <div class="form-group">
+                            <label for="masulEducationLevel">Education Level <span class="required">*</span></label>
+                            <select id="masulEducationLevel" class="form-control" required>
+                                <option value="">Select Education Level</option>
+                                <option value="Primary">Primary</option>
+                                <option value="Secondary">Secondary</option>
+                                <option value="Diploma">Diploma</option>
+                                <option value="Bachelor">Bachelor</option>
+                                <option value="Master">Master</option>
+                                <option value="PhD">PhD</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="masulCourseStudying">Course Studying</label>
+                            <input type="text" id="masulCourseStudying" class="form-control" placeholder="Enter course of study">
+                        </div>
+                        
+                        <!-- Changed to textarea for Mas'ul residential address -->
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label for="masulResidentialAddress">Residential Address <span class="required">*</span></label>
+                            <textarea id="masulResidentialAddress" class="form-control" required 
+                                      placeholder="Enter full residential address" rows="4"></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="masulZone">Zone <span class="required">*</span></label>
+                            <select id="masulZone" class="form-control" required>
+                                <option value="">Select Zone</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="masulBranch">Branch <span class="required">*</span></label>
+                            <select id="masulBranch" class="form-control" required>
+                                <option value="">Select Branch</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="masulRecruitmentYear">Year of Recruitment <span class="required">*</span></label>
+                            <select id="masulRecruitmentYear" class="form-control" required>
+                                <option value="">Select Year</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label for="masulPhotoInput">Passport Photograph <span class="required">*</span></label>
+                            <div class="photo-upload" id="masulPhotoUpload">
+                                <i class="fas fa-camera"></i>
+                                <p>Click to upload or drag & drop passport photograph</p>
+                                <p><small>Maximum size: 2MB | Format: JPG, PNG</small></p>
+                                <img id="masulPhotoPreview" class="photo-preview" alt="Photo preview" style="display: none;">
+                            </div>
+                            <input type="file" id="masulPhotoInput" accept="image/*" style="display: none;" required>
+                        </div>
+                        
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <div class="form-check">
+                                <input type="checkbox" id="masulDeclaration" class="form-check-input" required>
+                                <label for="masulDeclaration" class="form-check-label">
+                                    <strong>Declaration:</strong> I declare that the information provided is accurate and I commit to my responsibilities as Mas'ul. I understand that false information may lead to termination of my role.
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="cancelMasulForm">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Register Mas'ul
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Success Message -->
+        <div class="success-message" id="successMessage" style="display: none;">
+            <div class="success-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h2 class="success-title">Registration Successful!</h2>
+            <p class="success-text">The registration has been completed successfully.</p>
+            
+            <div class="id-card">
+                <div class="id-header">
+                    <i class="fas fa-id-card"></i>
+                    <h3>Registration ID Card</h3>
+                </div>
+                
+                <div class="id-body">
+                    <div class="id-photo-container">
+                        <img id="printPhoto" src="" alt="Passport Photo" class="id-photo" style="display: none;">
+                        <div class="id-photo-placeholder" id="photoPlaceholder">IIM</div>
+                    </div>
+                    
+                    <div class="id-details">
+                        <div class="id-item">
+                            <span class="id-label">Full Name:</span>
+                            <span class="id-value" id="printFullName">-</span>
+                        </div>
+                        <div class="id-item">
+                            <span class="id-label">Global ID:</span>
+                            <span class="id-value" id="printGlobalId">-</span>
+                        </div>
+                        <div class="id-item">
+                            <span class="id-label">Recruitment ID:</span>
+                            <span class="id-value" id="printRecruitmentId">-</span>
+                        </div>
+                        <div class="id-item">
+                            <span class="id-label">Branch:</span>
+                            <span class="id-value" id="printBranch">-</span>
+                        </div>
+                        <div class="id-item">
+                            <span class="id-label">Level:</span>
+                            <span class="id-value" id="printLevel">-</span>
+                        </div>
+                        <div class="id-item">
+                            <span class="id-label">Date Registered:</span>
+                            <span class="id-value" id="printDate">-</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="id-footer">
+                    <p class="id-note">
+                        <small>This is an official registration document of Intizarul Imamul Muntazar. 
+                        Keep this information for your records.</small>
+                    </p>
+                </div>
+                
+                <div class="print-actions">
+                    <button class="btn btn-secondary" onclick="window.print()">
+                        <i class="fas fa-print"></i> Print ID Card
+                    </button>
+                    <button class="btn btn-primary" id="registerAnother">
+                        <i class="fas fa-user-plus"></i> Register Another
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>

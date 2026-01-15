@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Intizarul Imamul Muntazar</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <!--script src="app.js" defer></script-->
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <img src="https://via.placeholder.com/50/228B22/FFFFFF?text=IIM" alt="IIM Logo" class="logo-img">
+                <div class="logo-text">Intizarul Imamul Muntazar</div>
+            </div>
+        </div>
+        
+        <div class="user-profile">
+            <div class="user-avatar">
+                <i class="fas fa-user-shield"></i>
+            </div>
+            <div class="user-name">Administrator</div>
+            <div class="user-role">System Admin</div>
+        </div>
+        
+        <div class="sidebar-menu">
+            <a href="#" class="menu-item active" data-section="overview">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>Dashboard Overview</span>
+            </a>
+            <a href="#" class="menu-item" data-section="members">
+                <i class="fas fa-users"></i>
+                <span>All Members</span>
+                <span class="menu-badge" id="membersCount">0</span>
+            </a>
+            <a href="#" class="menu-item" data-section="masul">
+                <i class="fas fa-user-shield"></i>
+                <span>Mas'ul Leaders</span>
+                <span class="menu-badge" id="masulCount">0</span>
+            </a>
+            <a href="#" class="menu-item" data-section="promotions">
+                <i class="fas fa-chart-line"></i>
+                <span>Promotions</span>
+            </a>
+            <a href="#" class="menu-item" data-section="transfers">
+                <i class="fas fa-exchange-alt"></i>
+                <span>Transfers</span>
+            </a>
+            <a href="#" class="menu-item" data-section="logs">
+                <i class="fas fa-history"></i>
+                <span>System Logs</span>
+            </a>
+            <a href="#" class="menu-item" data-section="settings">
+                <i class="fas fa-cog"></i>
+                <span>Settings</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Topbar -->
+        <div class="topbar">
+            <div class="topbar-left">
+                <button class="menu-toggle" id="menuToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h1 class="page-title" id="pageTitle">Dashboard Overview</h1>
+            </div>
+            <div class="topbar-right">
+                <div class="topbar-search">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="globalSearch" placeholder="Search members, mas'ul, branches...">
+                </div>
+                <div class="topbar-actions">
+                    <button class="btn btn-accent" onclick="App.logout()">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content Area -->
+        <div class="content">
+            <!-- Overview Section -->
+            <div class="dashboard-section active" id="overviewSection">
+                <div class="stats-grid" id="statsGrid">
+                    <!-- Loaded by JS -->
+                </div>
+
+                <div class="quick-actions">
+                    <div class="action-btn" onclick="App.switchSection('members')">
+                        <i class="fas fa-users"></i>
+                        <span>View Members</span>
+                    </div>
+                    <div class="action-btn" onclick="App.switchSection('masul')">
+                        <i class="fas fa-user-shield"></i>
+                        <span>View Mas'ul</span>
+                    </div>
+                    <div class="action-btn" onclick="App.exportData('all')">
+                        <i class="fas fa-download"></i>
+                        <span>Export Data</span>
+                    </div>
+                    <div class="action-btn" onclick="App.switchSection('settings')">
+                        <i class="fas fa-cog"></i>
+                        <span>System Settings</span>
+                    </div>
+                </div>
+
+                <div class="charts-container">
+                    <div class="chart-card">
+                        <h3><i class="fas fa-chart-pie"></i> Members per Zone</h3>
+                        <canvas id="zoneChart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3><i class="fas fa-chart-bar"></i> Members per Level</h3>
+                        <canvas id="levelChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="recent-activity">
+                    <h3><i class="fas fa-history"></i> Recent Activity</h3>
+                    <div class="activity-list" id="recentActivity">
+                        <!-- Loaded by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Members Section -->
+            <div class="dashboard-section" id="membersSection">
+                <div class="filters">
+                    <div class="filter-group">
+                        <label>Search</label>
+                        <input type="text" id="memberSearch" placeholder="Search by name, ID, or phone">
+                    </div>
+                    <div class="filter-group">
+                        <label>Zone</label>
+                        <select id="zoneFilter">
+                            <option value="">All Zones</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Branch</label>
+                        <select id="branchFilter">
+                            <option value="">All Branches</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Level</label>
+                        <select id="levelFilter">
+                            <option value="">All Levels</option>
+                            <option value="Bakiyatullah">Bakiyatullah</option>
+                            <option value="Ansarullah">Ansarullah</option>
+                            <option value="Ghalibun">Ghalibun</option>
+                            <option value="Graduate">Graduate</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Gender</label>
+                        <select id="genderFilter">
+                            <option value="">All Genders</option>
+                            <option value="Brother">Brother</option>
+                            <option value="Sister">Sister</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <button class="btn btn-primary" id="applyFilters">
+                            <i class="fas fa-filter"></i> Apply Filters
+                        </button>
+                        <button class="btn btn-secondary" onclick="App.exportData('members')">
+                            <i class="fas fa-download"></i> Export
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <div class="table-header">
+                        <h3>All Members</h3>
+                        <div class="table-actions">
+                            <button class="btn btn-primary" id="viewSelected">
+                                <i class="fas fa-eye"></i> View Selected
+                            </button>
+                            <button class="btn btn-accent" id="promoteSelected">
+                                <i class="fas fa-arrow-up"></i> Promote Selected
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table id="membersTable">
+                            <thead>
+                                <tr>
+                                    <th><input type="checkbox" id="selectAllMembers"></th>
+                                    <th>Photo</th>
+                                    <th>Global ID</th>
+                                    <th>Recruitment ID</th>
+                                    <th>Full Name</th>
+                                    <th>Gender</th>
+                                    <th>Phone</th>
+                                    <th>Branch</th>
+                                    <th>Level</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="membersTableBody">
+                                <!-- Loaded by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="pagination" id="membersPagination">
+                        <!-- Loaded by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mas'ul Section -->
+            <div class="dashboard-section" id="masulSection">
+                <div class="table-container">
+                    <div class="table-header">
+                        <h3>Mas'ul Leaders</h3>
+                        <div class="table-actions">
+                            <button class="btn btn-primary" onclick="App.showRegisterMasulModal()">
+                                <i class="fas fa-user-plus"></i> Add Mas'ul
+                            </button>
+                            <button class="btn btn-secondary" onclick="App.exportData('masul')">
+                                <i class="fas fa-download"></i> Export
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table id="masulTable">
+                            <thead>
+                                <tr>
+                                    <th>Photo</th>
+                                    <th>Global ID</th>
+                                    <th>Recruitment ID</th>
+                                    <th>Full Name</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>Branch</th>
+                                    <th>Year</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="masulTableBody">
+                                <!-- Loaded by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Promotions Section -->
+            <div class="dashboard-section" id="promotionsSection">
+                <div class="table-container">
+                    <h3>Promotion Logs</h3>
+                    <div class="table-responsive">
+                        <table id="promotionsTable">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Member ID</th>
+                                    <th>Old Level</th>
+                                    <th>New Level</th>
+                                    <th>Admin</th>
+                                    <th>Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody id="promotionsTableBody">
+                                <!-- Loaded by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transfers Section -->
+            <div class="dashboard-section" id="transfersSection">
+                <div class="table-container">
+                    <h3>Transfer Logs</h3>
+                    <div class="table-responsive">
+                        <table id="transfersTable">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Member ID</th>
+                                    <th>From Branch</th>
+                                    <th>To Branch</th>
+                                    <th>Admin</th>
+                                    <th>Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transfersTableBody">
+                                <!-- Loaded by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Logs Section -->
+            <div class="dashboard-section" id="logsSection">
+                <div class="table-container">
+                    <h3>System Activity Logs</h3>
+                    <div class="table-responsive">
+                        <table id="logsTable">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Action</th>
+                                    <th>Description</th>
+                                    <th>User Role</th>
+                                    <th>User Branch</th>
+                                </tr>
+                            </thead>
+                            <tbody id="logsTableBody">
+                                <!-- Loaded by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Section -->
+            <div class="dashboard-section" id="settingsSection">
+                <div class="card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-cog"></i> System Settings</h3>
+                    </div>
+                    <div class="card-body">
+                        <form id="settingsForm">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="adminAccessCode">Admin Access Code <span class="required">*</span></label>
+                                    <input type="password" id="adminAccessCode" class="form-control" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="masulAccessCode">Mas'ul Access Code <span class="required">*</span></label>
+                                    <input type="password" id="masulAccessCode" class="form-control" required>
+                                </div>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Save Settings
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="App.backupSystem()">
+                                    <i class="fas fa-database"></i> Backup System
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    
+    <!-- Optional: Add initialization script -->
+    <script>
+        // Wait for DOM and app.js to load
+        if (typeof App !== 'undefined') {
+            document.addEventListener('DOMContentLoaded', function() {
+                App.init();
+            });
+        } else {
+            console.error('App.js not loaded properly');
+        }
+    </script>
+</body>
+</html>

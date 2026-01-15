@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intizarul Imamul Muntazar - Membership Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <!--script src="app.js" defer></script-->
+</head>
+<body>
+    <!-- Header -->
+    <header class="navbar">
+        <div class="container navbar-container">
+            <div class="logo">
+                <!--img src="https://via.placeholder.com/50/228B22/FFFFFF?text=IIM" alt="IIM Logo" class="logo-img"-->
+                <img src="logo.png" alt="IIM Logo" class="logo-img">
+                
+                <div class="logo-text">إنتظار الإمام المنتظر<span></span></div>
+                <!--p>
+                مؤسسة أبي الفضل العباس
+                (تربير روح د غنغر جكي)
+            	</p-->
+            </div>
+            <nav class="nav-links">
+                <a href="index.html" class="nav-link active">
+                    <i class="fas fa-home"></i> Home
+                </a>
+                <a href="login.html?role=admin" class="nav-link">
+                    <i class="fas fa-user-shield"></i> Admin
+                </a>
+                <a href="login.html?role=masul" class="nav-link">
+                    <i class="fas fa-users"></i> Branch Mas'ul
+                </a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero bg-primary text-white">
+        <div class="container">
+            <div class="text-center">
+                <h1 class="hero-title">Welcome to Intizarul Imamul Muntazar</h1>
+                <p class="hero-subtitle">
+                    A comprehensive membership database system for managing members, tracking progress, 
+                    and organizing our community efficiently. Join us in building a better future.
+                </p>
+                
+                <div class="action-buttons">
+                    <a href="login.html?role=admin" class="btn btn-accent btn-lg">
+                        <i class="fas fa-user-shield"></i> Admin Login
+                    </a>
+                    <a href="login.html?role=masul" class="btn btn-outline btn-lg">
+                        <i class="fas fa-users"></i> Branch Mas'ul Login
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Cards Section -->
+    <section class="section">
+        <div class="container">
+            <div class="row">
+                <!-- Card 1: Imam Mahdi -->
+                <div class="col-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="fas fa-star-and-crescent"></i>
+                            <h3>Imam Mahdi (AS)</h3>
+                        </div>
+                        <div class="card-body">
+                            <!--img src="https://via.placeholder.com/400x250/228B22/FFFFFF?text=Imam+Mahdi" 
+                                 alt="Imam Mahdi" class="card-image"-->
+                                 <img src="logo.png" 
+                                 alt="Imam Mahdi" class="card-image">
+                            <p class="card-text">
+                                The Awaited Savior who will establish justice and peace throughout the world. 
+                                We await his reappearance with hope and preparation.
+                            </p>
+                            <ul class="features-list">
+                                <li><i class="fas fa-check text-primary"></i> The Awaited Imam</li>
+                                <li><i class="fas fa-check text-primary"></i> Savior of Humanity</li>
+                                <li><i class="fas fa-check text-primary"></i> Establisher of Justice</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 2: Sayyid Ibrahim Zakzaky -->
+                <div class="col-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="fas fa-user-tie"></i>
+                            <h3>Sayyid Ibrahim Zakzaky (H)</h3>
+                        </div>
+                        <div class="card-body">
+                            <img src="https://via.placeholder.com/400x250/2C3E50/FFFFFF?text=Sayyid+Zakzaky" 
+                                 alt="Sayyid Ibrahim Zakzaky" class="card-image">
+                            <p class="card-text">
+                                The esteemed leader and spiritual guide of the Islamic Movement in Nigeria, 
+                                dedicated to the cause of Islam and the awaiting of Imam Mahdi.
+                            </p>
+                            <ul class="features-list">
+                                <li><i class="fas fa-check text-primary"></i> Spiritual Leader</li>
+                                <li><i class="fas fa-check text-primary"></i> Islamic Movement Leader</li>
+                                <li><i class="fas fa-check text-primary"></i> Promoter of Mahdaviyat</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 3: Our Mission -->
+                <div class="col-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="fas fa-bullseye"></i>
+                            <h3>Our Mission</h3>
+                        </div>
+                        <div class="card-body">
+                            <img src="https://via.placeholder.com/400x250/E67E22/FFFFFF?text=Our+Mission" 
+                                 alt="Our Mission" class="card-image">
+                            <p class="card-text">
+                                To organize and manage members effectively, promote Islamic values, 
+                                and prepare for the reappearance of Imam Mahdi through education, 
+                                community service, and spiritual development.
+                            </p>
+                            <ul class="features-list">
+                                <li><i class="fas fa-check text-primary"></i> Member Management</li>
+                                <li><i class="fas fa-check text-primary"></i> Spiritual Development</li>
+                                <li><i class="fas fa-check text-primary"></i> Community Service</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Statistics -->
+    <section class="section bg-light">
+        <div class="container">
+            <h2 class="text-center mb-4">System Statistics</h2>
+            <div class="row" id="statsContainer">
+                <div class="col-3">
+                    <div class="stat-card">
+                        <span class="stat-number" id="totalMembers">0</span>
+                        <span class="stat-label">Total Members</span>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <div class="stat-card">
+                        <span class="stat-number" id="totalMasul">0</span>
+                        <span class="stat-label">Mas'ul Leaders</span>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <div class="stat-card">
+                        <span class="stat-number" id="totalBranches">0</span>
+                        <span class="stat-label">Branches</span>
+                    </div>
+                </div>
+                <div class="col-3">
+                    <div class="stat-card">
+                        <span class="stat-number" id="totalZones">9</span>
+                        <span class="stat-label">Zones</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-secondary text-white">
+        <div class="container">
+            <div class="section-sm">
+                <div class="text-center">
+                    <div class="logo mb-2">
+                        <img src="https://via.placeholder.com/40/228B22/FFFFFF?text=IIM" alt="IIM Logo" class="logo-img">
+                        <div class="logo-text">Intizarul <span>Imamul Muntazar</span></div>
+                    </div>
+                    <p>Comprehensive Membership Database System</p>
+                    
+                    <div class="footer-links mt-3">
+                        <a href="#privacy" class="text-white mx-2">Privacy Policy</a>
+                        <a href="#terms" class="text-white mx-2">Terms of Service</a>
+                        <a href="#contact" class="text-white mx-2">Contact Us</a>
+                    </div>
+                    
+                    <div class="copyright mt-3">
+                        &copy; <span id="currentYear"></span> Intizarul Imamul Muntazar. All rights reserved.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+    
+    <!-- Optional: Add initialization script -->
+    <!--script>
+        // Wait for DOM and app.js to load
+        if (typeof App !== 'undefined') {
+            document.addEventListener('DOMContentLoaded', function() {
+                App.init();
+            });
+        } else {
+            console.error('App.js not loaded properly');
+        }
+    
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+        // Optional: Load stats if needed
+        if (localStorage.getItem('isLoggedIn') === 'true' && localStorage.getItem('userRole') === 'admin') {
+            App.loadLandingStats();
+        } else {
+            document.getElementById('totalBranches').textContent = Object.values(App.ZONES).flat().length;
+        }
+    </script-->
+</body>
+</html>

@@ -8,232 +8,359 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <style>
-        /* Additional styles for registration page */
-        .photo-placeholder {
-            width: 100px;
-            height: 100px;
+        /* Enhanced form styles */
+        .form-progress {
+            background: #e9ecef;
+            height: 6px;
+            border-radius: 3px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        
+        .form-progress-bar {
+            height: 100%;
             background: #228B22;
+            width: 33%;
+            transition: width 0.3s ease;
+            border-radius: 3px;
+            position: relative;
+            text-align: center;
             color: white;
+            font-size: 12px;
+            line-height: 6px;
+        }
+        
+        .form-step-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px 0 40px;
+            position: relative;
+        }
+        
+        .step {
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .step-number {
+            width: 40px;
+            height: 40px;
+            background: #e9ecef;
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 10px;
-            font-weight: bold;
+            margin: 0 auto 10px;
+            font-weight: 600;
+            color: #6c757d;
+            border: 3px solid #e9ecef;
+            transition: all 0.3s ease;
         }
         
-        .badge {
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
+        .step.active .step-number {
+            background: #228B22;
+            color: white;
+            border-color: #228B22;
+        }
+        
+        .step.completed .step-number {
+            background: #28a745;
+            color: white;
+            border-color: #28a745;
+        }
+        
+        .step-label {
+            font-size: 14px;
+            color: #6c757d;
+            font-weight: 500;
+        }
+        
+        .step.active .step-label {
+            color: #228B22;
             font-weight: 600;
         }
         
-        .badge-primary { background: #228B22; color: white; }
-        .badge-pink { background: #e83e8c; color: white; }
-        .badge-level-bakiyatullah { background: #17a2b8; color: white; }
-        .badge-level-ansarullah { background: #28a745; color: white; }
-        .badge-level-ghalibun { background: #ffc107; color: #212529; }
-        .badge-level-graduate { background: #6c757d; color: white; }
-        
-        .action-buttons {
+        .form-navigation {
             display: flex;
-            gap: 5px;
+            justify-content: space-between;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
         }
         
-        .btn-icon {
-            width: 32px;
-            height: 32px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        .form-section {
+            animation: fadeIn 0.5s ease;
         }
         
-        .btn-view { background: #17a2b8; color: white; }
-        .btn-promote { background: #28a745; color: white; }
-        .btn-transfer { background: #ffc107; color: #212529; }
-        
-        /* Textarea specific styles */
-        textarea.form-control {
-            min-height: 100px;
-            resize: vertical;
-            font-family: inherit;
-            line-height: 1.5;
-            padding: 12px;
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         
-        .form-grid textarea {
-            grid-column: 1 / -1;
-        }
-        
-        /* Photo upload area */
-        .photo-upload {
+        /* Enhanced photo upload */
+        .photo-upload-area {
             border: 3px dashed #ddd;
+            border-radius: 10px;
             padding: 40px 20px;
             text-align: center;
-            border-radius: 10px;
             cursor: pointer;
             transition: all 0.3s ease;
             background: #f8f9fa;
+            margin-bottom: 20px;
         }
         
-        .photo-upload:hover {
+        .photo-upload-area:hover {
             border-color: #228B22;
             background: rgba(34, 139, 34, 0.05);
         }
         
-        .photo-upload i {
+        .photo-upload-area.drag-over {
+            border-color: #228B22;
+            background: rgba(34, 139, 34, 0.1);
+            transform: scale(1.02);
+        }
+        
+        .photo-upload-area i {
             font-size: 48px;
             color: #228B22;
             margin-bottom: 15px;
+            opacity: 0.7;
+        }
+        
+        .photo-upload-area:hover i {
+            opacity: 1;
+        }
+        
+        .photo-preview-container {
+            position: relative;
+            max-width: 200px;
+            margin: 20px auto;
         }
         
         .photo-preview {
-            max-width: 200px;
-            max-height: 200px;
-            margin: 15px auto 0;
-            display: block;
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
             border-radius: 10px;
             border: 3px solid #228B22;
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
         
-        /* Form tabs */
-        .form-tabs {
-            display: flex;
-            background: #f8f9fa;
-            border-radius: 10px 10px 0 0;
-            overflow: hidden;
-        }
-        
-        .form-tab {
-            flex: 1;
-            padding: 15px;
-            background: none;
+        .photo-remove {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: #dc3545;
+            color: white;
             border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
             cursor: pointer;
-            font-weight: 500;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
-            transition: all 0.3s ease;
         }
         
-        .form-tab:hover {
-            background: rgba(34, 139, 34, 0.1);
+        /* Enhanced input styling */
+        .form-control:focus {
+            border-color: #228B22;
+            box-shadow: 0 0 0 0.2rem rgba(34, 139, 34, 0.25);
         }
         
-        .form-tab.active {
-            background: #228B22;
+        .form-control.valid {
+            border-color: #28a745;
+        }
+        
+        .form-control.invalid {
+            border-color: #dc3545;
+        }
+        
+        .form-group {
+            position: relative;
+        }
+        
+        .required-star {
+            color: #dc3545;
+            margin-left: 3px;
+        }
+        
+        .validation-message {
+            font-size: 12px;
+            color: #dc3545;
+            margin-top: 5px;
+            display: none;
+        }
+        
+        .form-control.invalid + .validation-message {
+            display: block;
+        }
+        
+        /* Enhanced ID Card */
+        .id-card-enhanced {
+            background: linear-gradient(135deg, #1a6b1a 0%, #228B22 100%);
             color: white;
-        }
-        
-        /* Success message */
-        .success-message {
-            max-width: 800px;
-            margin: 40px auto;
-            text-align: center;
-            padding: 40px;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        }
-        
-        .success-icon i {
-            font-size: 80px;
-            color: #28a745;
-            margin-bottom: 20px;
-        }
-        
-        /* ID Card */
-        .id-card {
-            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-            border: 3px solid #228B22;
-            border-radius: 15px;
+            border-radius: 20px;
             padding: 30px;
             margin: 30px auto;
             max-width: 600px;
-            box-shadow: 0 10px 30px rgba(34, 139, 34, 0.15);
+            box-shadow: 0 15px 35px rgba(34, 139, 34, 0.3);
+            position: relative;
+            overflow: hidden;
         }
         
-        .id-photo-container {
+        .id-card-enhanced::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 30px 30px;
+            opacity: 0.3;
+        }
+        
+        .id-header {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
+            position: relative;
+            z-index: 1;
         }
         
-        .id-photo {
-            width: 150px;
-            height: 150px;
-            object-fit: cover;
-            border-radius: 10px;
-            border: 3px solid #228B22;
-        }
-        
-        .id-photo-placeholder {
-            width: 150px;
-            height: 150px;
-            background: #228B22;
-            color: white;
-            display: inline-flex;
+        .id-logo {
+            width: 80px;
+            height: 80px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 10px;
+            margin: 0 auto 15px;
+            color: #228B22;
             font-size: 32px;
             font-weight: bold;
         }
         
-        .id-details {
-            text-align: left;
-        }
-        
-        .id-item {
+        .id-body {
             display: flex;
-            justify-content: space-between;
-            padding: 12px 0;
-            border-bottom: 1px solid #e9ecef;
+            gap: 30px;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
         }
         
-        .id-item:last-child {
-            border-bottom: none;
+        .id-photo-container {
+            flex-shrink: 0;
+        }
+        
+        .id-photo {
+            width: 180px;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 10px;
+            border: 3px solid white;
+            background: white;
+        }
+        
+        .id-details {
+            flex: 1;
+        }
+        
+        .id-row {
+            display: flex;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
         }
         
         .id-label {
+            width: 150px;
             font-weight: 600;
-            color: #495057;
+            opacity: 0.9;
         }
         
         .id-value {
+            flex: 1;
             font-weight: 700;
-            color: #228B22;
             font-family: 'Courier New', monospace;
-            font-size: 16px;
         }
         
-        /* Responsive adjustments */
+        .id-footer {
+            text-align: center;
+            margin-top: 30px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* Responsive improvements */
         @media (max-width: 768px) {
-            .form-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .id-item {
+            .id-body {
                 flex-direction: column;
-                gap: 5px;
+                text-align: center;
             }
             
-            .action-buttons {
+            .id-row {
                 flex-direction: column;
+                text-align: left;
             }
             
-            .btn-icon {
+            .id-label {
                 width: 100%;
                 margin-bottom: 5px;
             }
+            
+            .step-indicator {
+                flex-wrap: wrap;
+            }
+            
+            .step {
+                flex: 0 0 33.333%;
+                margin-bottom: 15px;
+            }
+            
+            .form-navigation {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .form-navigation button {
+                width: 100%;
+            }
         }
         
-        /* Toggle Switch */
+        /* Success animation */
+        .success-check {
+            width: 100px;
+            height: 100px;
+            background: #28a745;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 30px;
+            animation: scaleIn 0.5s ease;
+        }
+        
+        .success-check i {
+            font-size: 50px;
+            color: white;
+        }
+        
+        @keyframes scaleIn {
+            from { transform: scale(0); }
+            to { transform: scale(1); }
+        }
+        
+        /* Arabic text styling */
+        .arabic-text {
+            font-family: 'Arial', sans-serif;
+            direction: rtl;
+            line-height: 1.8;
+        }
+        
+        /* Enhanced toggle switch */
         .toggle-switch {
             position: relative;
             display: inline-block;
@@ -278,41 +405,21 @@
         input:checked + .toggle-slider:before {
             transform: translateX(30px);
         }
-        
-        /* Form Check */
-        .form-check {
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-        
-        .form-check-input {
-            margin-top: 5px;
-        }
-        
-        .form-check-label {
-            flex: 1;
-            line-height: 1.5;
-        }
-        
-        /* Required indicator */
-        .required-star {
-            color: #dc3545;
-            font-weight: bold;
-        }
     </style>
 </head>
 <body>
-    <!-- Header -->
+    <!-- Enhanced Header -->
     <header class="navbar">
         <div class="container navbar-container">
             <div class="logo">
-                <img src="https://via.placeholder.com/40/228B22/FFFFFF?text=IIM" alt="IIM Logo" class="logo-img">
-                <div class="logo-text">Intizarul <span>Imamul Muntazar</span></div>
+                <img src="logo.png" alt="IIM Logo" class="logo-img">
+                <div class="logo-text">
+                    <h1 style="margin: 0; line-height: 1.2; font-size: 1.8rem;" class="arabic-text">إنتظار الإمام المنتظر</h1>
+                    <p style="margin: 5px 0 0 0; font-size: 0.9rem;" class="arabic-text">مؤسسة أبي الفضل العباس (تربير روح د غنغر جكي)</p>
+                </div>
             </div>
             <div class="user-info">
-                <div class="user-branch" id="currentBranch">Branch: Kaduna</div>
+                <div class="user-branch" id="currentBranch">Loading...</div>
                 <div class="user-badge">
                     <i class="fas fa-users"></i>
                     <span>Branch Mas'ul</span>
@@ -338,7 +445,7 @@
                     Please ensure information is accurate before submission.
                 </p>
                 
-                <!-- Mas'ul Toggle (Admin Only) -->
+                <!-- Mas'ul Toggle -->
                 <div class="masul-toggle" id="masulToggleContainer" style="display: none; margin-top: 1.5rem;">
                     <label class="toggle-switch">
                         <input type="checkbox" id="masulToggle">
@@ -351,448 +458,582 @@
 
         <!-- Registration Form Container -->
         <div id="formContainer">
-            <!-- Member Registration Form -->
+            <!-- Enhanced Member Registration Form with Steps -->
             <div class="form-container" id="memberFormSection">
                 <!-- Form Progress -->
-                <div class="form-progress" style="background: #e9ecef; height: 6px; border-radius: 3px; margin: 20px 0;">
-                    <div class="form-progress-bar" id="formProgress" style="height: 100%; background: #228B22; width: 33%; border-radius: 3px; transition: width 0.3s ease;"></div>
+                <div class="form-progress">
+                    <div class="form-progress-bar" id="formProgress">33%</div>
                 </div>
                 
                 <!-- Step Indicator -->
-                <div class="form-step-indicator" style="display: flex; justify-content: space-between; margin: 20px 0 40px; position: relative;">
+                <div class="form-step-indicator">
                     <div class="step active" data-step="personal">
-                        <div class="step-number" style="width: 40px; height: 40px; background: #228B22; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; font-weight: 600; color: white; border: 3px solid #228B22;">1</div>
-                        <div class="step-label" style="font-size: 14px; color: #228B22; font-weight: 600;">Personal Info</div>
+                        <div class="step-number">1</div>
+                        <div class="step-label">Personal Info</div>
                     </div>
                     <div class="step" data-step="contact">
-                        <div class="step-number" style="width: 40px; height: 40px; background: #e9ecef; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; font-weight: 600; color: #6c757d; border: 3px solid #e9ecef;">2</div>
-                        <div class="step-label" style="font-size: 14px; color: #6c757d; font-weight: 500;">Contact & Address</div>
+                        <div class="step-number">2</div>
+                        <div class="step-label">Contact & Address</div>
                     </div>
                     <div class="step" data-step="membership">
-                        <div class="step-number" style="width: 40px; height: 40px; background: #e9ecef; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; font-weight: 600; color: #6c757d; border: 3px solid #e9ecef;">3</div>
-                        <div class="step-label" style="font-size: 14px; color: #6c757d; font-weight: 500;">Membership Details</div>
+                        <div class="step-number">3</div>
+                        <div class="step-label">Membership Details</div>
                     </div>
                 </div>
 
                 <form id="memberRegistrationForm">
                     <!-- Personal Information Tab -->
                     <div class="form-section active" id="personalTab">
-                        <h2 class="section-title" style="color: #228B22; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                        <h2 class="section-title">
                             <i class="fas fa-user-circle"></i> Personal Information
                         </h2>
-                        <div class="form-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+                        <div class="form-grid">
                             <div class="form-group">
                                 <label for="fullName">Cikakken Suna <span class="required-star">*</span></label>
-                                <input type="text" id="fullName" class="form-control" required placeholder="Enter full name" style="width: 100%; padding: 12px; border: 2px solid #e9ecef; border-radius: 8px;" value="Khadija Muhammad Tasiu">
+                                <input type="text" id="fullName" class="form-control" required 
+                                       placeholder="Enter full name">
+                                <div class="validation-message">Full name is required</div>
                             </div>
                             <div class="form-group">
                                 <label for="firstName">Suna <span class="required-star">*</span></label>
-                                <input type="text" id="firstName" class="form-control" required placeholder="Enter first name" style="width: 100%; padding: 12px; border: 2px solid #e9ecef; border-radius: 8px;" value="Khadija">
+                                <input type="text" id="firstName" class="form-control" required 
+                                       placeholder="Enter first name">
+                                <div class="validation-message">First name is required</div>
                             </div>
                             <div class="form-group">
                                 <label for="fatherName">Sunan Mahaifi <span class="required-star">*</span></label>
-                                <input type="text" id="fatherName" class="form-control" required placeholder="Enter father's name" style="width: 100%; padding: 12px; border: 2px solid #e9ecef; border-radius: 8px;" value="Muhammad Tasiu Aliyu">
+                                <input type="text" id="fatherName" class="form-control" required 
+                                       placeholder="Enter father's name">
+                                <div class="validation-message">Father's name is required</div>
                             </div>
                             <div class="form-group">
                                 <label for="grandfatherName">Sunan Kaka</label>
-                                <input type="text" id="grandfatherName" class="form-control" placeholder="Enter grandfather's name" style="width: 100%; padding: 12px; border: 2px solid #e9ecef; border-radius: 8px;" value="Aliyu Abdullahi">
+                                <input type="text" id="grandfatherName" class="form-control" 
+                                       placeholder="Enter grandfather's name">
                             </div>
                             <div class="form-group">
                                 <label for="birthDate">Ranar Haihuwa <span class="required-star">*</span></label>
-                                <input type="date" id="birthDate" class="form-control" required style="width: 100%; padding: 12px; border: 2px solid #e9ecef; border-radius: 8px;" value="2016-07-01">
+                                <input type="date" id="birthDate" class="form-control" required>
+                                <div class="validation-message">Birth date is required</div>
                             </div>
                             <div class="form-group">
                                 <label for="gender">Gender <span class="required-star">*</span></label>
-                                <select id="gender" class="form-control" required style="width: 100%; padding: 12px; border: 2px solid #e9ecef; border-radius: 8px;">
+                                <select id="gender" class="form-control" required>
                                     <option value="">Select Gender</option>
                                     <option value="Brother">Brother</option>
-                                    <option value="Sister" selected>Sister</option>
+                                    <option value="Sister">Sister</option>
                                 </select>
+                                <div class="validation-message">Gender is required</div>
                             </div>
                         </div>
                         
-                        <div class="form-navigation" style="display: flex; justify-content: space-between; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e9ecef;">
-                            <button type="button" class="btn btn-secondary prev-tab" disabled style="padding: 12px 24px; background: #6c757d; color: white; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                        <div class="form-navigation">
+                            <button type="button" class="btn btn-secondary prev-tab" disabled>
                                 <i class="fas fa-arrow-left"></i> Previous
                             </button>
-                            <button type="button" class="btn btn-primary next-tab" style="padding: 12px 24px; background: #228B22; color: white; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                            <button type="button" class="btn btn-primary next-tab">
                                 Next <i class="fas fa-arrow-right"></i>
                             </button>
                         </div>
                     </div>
 
                     <!-- Contact & Address Tab -->
-                    <div class="form-section" id="contactTab" style="display: none;">
-                        <h2 class="section-title" style="color: #228B22; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                    <div class="form-section" id="contactTab">
+                        <h2 class="section-title">
                             <i class="fas fa-home"></i> Contact & Address
                         </h2>
-                        <div class="form-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+                        <div class="form-grid">
                             <div class="form-group" style="grid-column: 1 / -1;">
                                 <label for="residentialAddress">Adireshin Wajan Zama <span class="required-star">*</span></label>
-                                <textarea id="residentialAddress" class="form-control" required placeholder="Enter full residential address" rows="4" style="width: 100%; padding: 12px; border: 2px solid #e9ecef; border-radius: 8px; min-height: 100px; resize: vertical;"></textarea>
+                                <textarea id="residentialAddress" class="form-control" required 
+                                          placeholder="Enter full residential address" rows="4"></textarea>
+                                <div class="validation-message">Residential address is required</div>
                             </div>
                             
                             <div class="form-group">
                                 <label for="neighborhood">Unguwa</label>
-                                <input type="text" id="neighborhood" class="form-control" placeholder="Enter neighborhood" style="width: 100%; padding: 12px; border: 2px solid #e9ecef; border-radius: 8px;">
+                                <input type="text" id="neighborhood" class="form-control" placeholder="Enter neighborhood">
                             </div>
                             <div class="form-group">
                                 <label for="localGovernment">Karamar Hukuma</label>
-                                <input type="text" id="localGovernment" class="form-control" placeholder="Enter local government" style="width: 100%; padding: 12px; border: 2px solid #e9ecef; border-radius: 8px;">
+                                <input type="text" id="localGovernment" class="form-control" placeholder="Enter local government">
                             </div>
                             <div class="form-group">
                                 <label for="state">Jaha</label>
-                                <input type="text" id="state" class="form-control" placeholder="Enter state" style="width: 100%; padding: 12px; border: 2px solid #e9ecef; border-radius: 8px;">
+                                <input type="text" id="state" class="form-control" placeholder="Enter state">
                             </div>
                             <div class="form-group">
                                 <label for="phone1">Lambar Waya 1 <span class="required-star">*</span></label>
-                                <input type="tel" id="phone1" class="form-control" required placeholder="Enter primary phone number" style="width: 100%; padding: 12px; border: 2px solid #e9ecef; border-radius: 8px;">
+                                <input type="tel" id="phone1" class="form-control" required 
+                                       placeholder="Enter primary phone number">
+                                <div class="validation-message">Phone number is required</div>
                             </div>
                             <div class="form-group">
                                 <label for="phone2">Lambar Waya 2</label>
-                                <input type="tel" id="phone2" class="form-control" placeholder="Enter secondary phone number" style="width: 100%; padding: 12px; border: 2px solid #e9ecef; border-radius: 8px;">
+                                <input type="tel" id="phone2" class="form-control" 
+                                       placeholder="Enter secondary phone number">
                             </div>
                             
                             <div class="form-group" style="grid-column: 1 / -1;">
                                 <label for="parentsGuardians">Sunan Iyaye/Masu kula</label>
-                                <input type="text" id="parentsGuardians" class="form-control" placeholder="Enter parents/guardians names" style="width: 100%; padding: 12px; border: 2px solid #e9ecef; border-radius: 8px;">
+                                <input type="text" id="parentsGuardians" class="form-control" 
+                                       placeholder="Enter parents/guardians names">
                             </div>
                             
                             <div class="form-group" style="grid-column: 1 / -1;">
                                 <label for="parentAddress">Adireshin Iyaye/masu kula</label>
-                                <textarea id="parentAddress" class="form-control" placeholder="Enter parents/guardians address" rows="3" style="width: 100%; padding: 12px; border: 2px solid #e9ecef; border-radius: 8px; min-height: 80px; resize: vertical;"></textarea>
+                                <textarea id="parentAddress" class="form-control" 
+                                          placeholder="Enter parents/guardians address" rows="3"></textarea>
                             </div>
                         </div>
                         
-                        <div class="form-navigation" style="display: flex; justify-content: space-between; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e9ecef;">
-                            <button type="button" class="btn btn-secondary prev-tab" style="padding: 12px 24px; background: #6c757d; color: white; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                        <div class="form-navigation">
+                            <button type="button" class="btn btn-secondary prev-tab">
                                 <i class="fas fa-arrow-left"></i> Previous
                             </button>
-                            <button type="button" class="btn btn-primary next-tab" style="padding: 12px 24px; background: #228B22; color: white; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                            <button type="button" class="btn btn-primary next-tab">
                                 Next <i class="fas fa-arrow-right"></i>
                             </button>
                         </div>
                     </div>
 
                     <!-- Membership Details Tab -->
-                    <div class="form-section" id="membershipTab" style="display: none;">
-                        <h2 class="section-title" style="color: #228B22; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                    <div class="form-section" id="membershipTab">
+                        <h2 class="section-title">
                             <i class="fas fa-users"></i> Membership Details
                         </h2>
-                        <div class="form-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+                        <div class="form-grid">
                             <div class="form-group">
                                 <label for="zone">Zone <span class="required-star">*</span></label>
-                                <select id="zone" class="form-control" required style="width: 100%; padding: 12px; border: 2px solid #e9ecef; border-radius: 8px;">
+                                <select id="zone" class="form-control" required>
                                     <option value="">Select Zone</option>
                                 </select>
+                                <div class="validation-message">Zone is required</div>
                             </div>
                             <div class="form-group">
                                 <label for="branch">Branch <span class="required-star">*</span></label>
-                                <select id="branch" class="form-control" required style="width: 100%; padding: 12px; border: 2px solid #e9ecef; border-radius: 8px;">
+                                <select id="branch" class="form-control" required>
                                     <option value="">Select Branch</option>
                                 </select>
+                                <div class="validation-message">Branch is required</div>
                             </div>
                             <div class="form-group">
                                 <label for="recruitmentYear">Year of Recruitment <span class="required-star">*</span></label>
-                                <select id="recruitmentYear" class="form-control" required style="width: 100%; padding: 12px; border: 2px solid #e9ecef; border-radius: 8px;">
+                                <select id="recruitmentYear" class="form-control" required>
                                     <option value="">Select Year</option>
                                 </select>
+                                <div class="validation-message">Recruitment year is required</div>
                             </div>
                             <div class="form-group">
                                 <label for="memberLevel">Level Admitted To <span class="required-star">*</span></label>
-                                <select id="memberLevel" class="form-control" required style="width: 100%; padding: 12px; border: 2px solid #e9ecef; border-radius: 8px;">
+                                <select id="memberLevel" class="form-control" required>
                                     <option value="">Select Level</option>
                                     <option value="Bakiyatullah">Bakiyatullah</option>
                                     <option value="Ansarullah">Ansarullah</option>
                                     <option value="Ghalibun">Ghalibun</option>
                                     <option value="Graduate">Graduate</option>
                                 </select>
+                                <div class="validation-message">Member level is required</div>
                             </div>
                             <div class="form-group" style="grid-column: 1 / -1;">
                                 <label for="photoInput">Passport Photograph <span class="required-star">*</span></label>
-                                <div class="photo-upload" id="photoUpload" style="border: 3px dashed #ddd; padding: 40px 20px; text-align: center; border-radius: 10px; cursor: pointer; transition: all 0.3s ease; background: #f8f9fa;">
-                                    <i class="fas fa-camera" style="font-size: 48px; color: #228B22; margin-bottom: 15px;"></i>
+                                <div class="photo-upload-area" id="photoUpload">
+                                    <i class="fas fa-camera"></i>
                                     <p>Click to upload or drag & drop passport photograph</p>
                                     <p><small>Maximum size: 2MB | Format: JPG, PNG</small></p>
-                                    <img id="photoPreview" class="photo-preview" alt="Photo preview" style="max-width: 200px; max-height: 200px; margin: 15px auto 0; display: none; border-radius: 10px; border: 3px solid #228B22; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
+                                    <div class="photo-preview-container">
+                                        <img id="photoPreview" class="photo-preview" alt="Photo preview" style="display: none;">
+                                        <button type="button" class="photo-remove" onclick="document.getElementById('photoInput').value='';document.getElementById('photoPreview').style.display='none';document.getElementById('photoInput').dataset.base64='';" style="display: none;">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
                                 </div>
                                 <input type="file" id="photoInput" accept="image/*" style="display: none;" required>
+                                <div class="validation-message">Passport photograph is required</div>
                             </div>
                         </div>
                         
-                        <div class="form-navigation" style="display: flex; justify-content: space-between; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e9ecef;">
-                            <button type="button" class="btn btn-secondary prev-tab" style="padding: 12px 24px; background: #6c757d; color: white; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                        <div class="form-navigation">
+                            <button type="button" class="btn btn-secondary prev-tab">
                                 <i class="fas fa-arrow-left"></i> Previous
                             </button>
-                            <button type="submit" class="btn btn-primary" style="padding: 12px 24px; background: #228B22; color: white; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                            <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-save"></i> Register Member
                             </button>
                         </div>
                     </div>
                 </form>
             </div>
+
+            <!-- Mas'ul Registration Form -->
+            <div class="form-container" id="masulFormSection" style="display: none;">
+                <div class="form-header">
+                    <h2><i class="fas fa-user-shield"></i> Mas'ul Registration Form</h2>
+                    <p>Complete all fields below to register a new Mas'ul leader</p>
+                </div>
+                
+                <form id="masulRegistrationForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="masulFullName">Full Name <span class="required-star">*</span></label>
+                            <input type="text" id="masulFullName" class="form-control" required placeholder="Enter full name">
+                        </div>
+                        <div class="form-group">
+                            <label for="masulFatherName">Father's Name <span class="required-star">*</span></label>
+                            <input type="text" id="masulFatherName" class="form-control" required placeholder="Enter father's name">
+                        </div>
+                        <div class="form-group">
+                            <label for="masulBirthDate">Date of Birth <span class="required-star">*</span></label>
+                            <input type="date" id="masulBirthDate" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="masulEmail">Email <span class="required-star">*</span></label>
+                            <input type="email" id="masulEmail" class="form-control" required placeholder="Enter email address">
+                        </div>
+                        <div class="form-group">
+                            <label for="masulPhone1">Phone Number 1 <span class="required-star">*</span></label>
+                            <input type="tel" id="masulPhone1" class="form-control" required placeholder="Enter primary phone number">
+                        </div>
+                        <div class="form-group">
+                            <label for="masulPhone2">Phone Number 2</label>
+                            <input type="tel" id="masulPhone2" class="form-control" placeholder="Enter secondary phone number">
+                        </div>
+                        <div class="form-group">
+                            <label for="masulEducationLevel">Education Level <span class="required-star">*</span></label>
+                            <select id="masulEducationLevel" class="form-control" required>
+                                <option value="">Select Education Level</option>
+                                <option value="Primary">Primary</option>
+                                <option value="Secondary">Secondary</option>
+                                <option value="Diploma">Diploma</option>
+                                <option value="Bachelor">Bachelor</option>
+                                <option value="Master">Master</option>
+                                <option value="PhD">PhD</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="masulCourseStudying">Course Studying</label>
+                            <input type="text" id="masulCourseStudying" class="form-control" placeholder="Enter course of study">
+                        </div>
+                        
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label for="masulResidentialAddress">Residential Address <span class="required-star">*</span></label>
+                            <textarea id="masulResidentialAddress" class="form-control" required 
+                                      placeholder="Enter full residential address" rows="4"></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="masulZone">Zone <span class="required-star">*</span></label>
+                            <select id="masulZone" class="form-control" required>
+                                <option value="">Select Zone</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="masulBranch">Branch <span class="required-star">*</span></label>
+                            <select id="masulBranch" class="form-control" required>
+                                <option value="">Select Branch</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="masulRecruitmentYear">Year of Recruitment <span class="required-star">*</span></label>
+                            <select id="masulRecruitmentYear" class="form-control" required>
+                                <option value="">Select Year</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label for="masulPhotoInput">Passport Photograph <span class="required-star">*</span></label>
+                            <div class="photo-upload-area" id="masulPhotoUpload">
+                                <i class="fas fa-camera"></i>
+                                <p>Click to upload or drag & drop passport photograph</p>
+                                <p><small>Maximum size: 2MB | Format: JPG, PNG</small></p>
+                                <div class="photo-preview-container">
+                                    <img id="masulPhotoPreview" class="photo-preview" alt="Photo preview" style="display: none;">
+                                    <button type="button" class="photo-remove" onclick="document.getElementById('masulPhotoInput').value='';document.getElementById('masulPhotoPreview').style.display='none';document.getElementById('masulPhotoInput').dataset.base64='';" style="display: none;">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <input type="file" id="masulPhotoInput" accept="image/*" style="display: none;" required>
+                        </div>
+                        
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <div class="form-check">
+                                <input type="checkbox" id="masulDeclaration" class="form-check-input" required>
+                                <label for="masulDeclaration" class="form-check-label">
+                                    <strong>Declaration:</strong> I declare that the information provided is accurate and I commit to my responsibilities as Mas'ul. I understand that false information may lead to termination of my role.
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="cancelMasulForm">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Register Mas'ul
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Enhanced Success Message -->
+        <div class="success-message" id="successMessage" style="display: none;">
+            <div class="success-check">
+                <i class="fas fa-check"></i>
+            </div>
+            <h2 class="success-title">Registration Successful!</h2>
+            <p class="success-text">The registration has been completed successfully.</p>
+            
+            <div class="id-card-enhanced">
+                <div class="id-header">
+                    <div class="id-logo">IIM</div>
+                    <h3>Registration ID Card</h3>
+                </div>
+                
+                <div class="id-body">
+                    <div class="id-photo-container">
+                        <img id="printPhoto" src="" alt="Passport Photo" class="id-photo" style="display: none;">
+                        <div class="id-photo-placeholder" id="photoPlaceholder" style="width: 180px; height: 180px; background: white; color: #228B22; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-size: 32px; font-weight: bold;">IIM</div>
+                    </div>
+                    
+                    <div class="id-details">
+                        <div class="id-row">
+                            <div class="id-label">Full Name:</div>
+                            <div class="id-value" id="printFullName">-</div>
+                        </div>
+                        <div class="id-row">
+                            <div class="id-label">Global ID:</div>
+                            <div class="id-value" id="printGlobalId">-</div>
+                        </div>
+                        <div class="id-row">
+                            <div class="id-label">Recruitment ID:</div>
+                            <div class="id-value" id="printRecruitmentId">-</div>
+                        </div>
+                        <div class="id-row">
+                            <div class="id-label">Branch:</div>
+                            <div class="id-value" id="printBranch">-</div>
+                        </div>
+                        <div class="id-row">
+                            <div class="id-label">Level:</div>
+                            <div class="id-value" id="printLevel">-</div>
+                        </div>
+                        <div class="id-row">
+                            <div class="id-label">Date Registered:</div>
+                            <div class="id-value" id="printDate">-</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="id-footer">
+                    <p class="id-note">
+                        <small>This is an official registration document of Intizarul Imamul Muntazar. 
+                        Keep this information for your records.</small>
+                    </p>
+                </div>
+                
+                <div class="print-actions" style="text-align: center; margin-top: 20px;">
+                    <button class="btn btn-secondary" onclick="window.print()" style="background: white; color: #228B22; border: 2px solid white;">
+                        <i class="fas fa-print"></i> Print ID Card
+                    </button>
+                    <button class="btn btn-primary" id="registerAnother" style="background: rgba(255,255,255,0.2); color: white; border: 2px solid white;">
+                        <i class="fas fa-user-plus"></i> Register Another
+                    </button>
+                </div>
+            </div>
         </div>
     </main>
 
     <script src="app.js"></script>
     <script>
-        // Initialize form functionality
+        // Additional enhancements for photo upload
         document.addEventListener('DOMContentLoaded', function() {
-            // Tab navigation
-            const tabs = document.querySelectorAll('.form-tab');
-            const sections = document.querySelectorAll('.form-section');
-            const nextButtons = document.querySelectorAll('.next-tab');
-            const prevButtons = document.querySelectorAll('.prev-tab');
-            const progressBar = document.getElementById('formProgress');
-            const steps = document.querySelectorAll('.step');
-            
-            // Initialize zones and branches
-            if (typeof App !== 'undefined') {
-                App.populateZones('zone', 'branch');
-                App.populateYears('recruitmentYear');
-                App.setupPhoto('photoUpload', 'photoInput', 'photoPreview');
-            }
-            
-            // Tab click handler
-            tabs.forEach(tab => {
-                tab.addEventListener('click', () => {
-                    const tabId = tab.dataset.tab;
-                    
-                    // Update tabs
-                    tabs.forEach(t => t.classList.remove('active'));
-                    sections.forEach(s => s.classList.remove('active'));
-                    
-                    tab.classList.add('active');
-                    document.getElementById(tabId + 'Tab').classList.add('active');
-                    
-                    // Update steps
-                    updateSteps(tabId);
-                });
-            });
-            
-            // Next button handler
-            nextButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    const currentSection = document.querySelector('.form-section.active');
-                    const currentTab = document.querySelector('.form-tab.active');
-                    const tabId = currentTab.dataset.tab;
-                    
-                    // Validate current section
-                    if (validateSection(tabId)) {
-                        // Navigate to next tab
-                        const tabsArray = Array.from(tabs);
-                        const currentIndex = tabsArray.indexOf(currentTab);
-                        
-                        if (currentIndex < tabsArray.length - 1) {
-                            tabsArray[currentIndex + 1].click();
-                        }
-                    }
-                });
-            });
-            
-            // Previous button handler
-            prevButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    const currentTab = document.querySelector('.form-tab.active');
-                    const tabsArray = Array.from(tabs);
-                    const currentIndex = tabsArray.indexOf(currentTab);
-                    
-                    if (currentIndex > 0) {
-                        tabsArray[currentIndex - 1].click();
-                    }
-                });
-            });
-            
-            // Update steps
-            function updateSteps(currentTab) {
-                const stepMap = {
-                    'personal': 0,
-                    'contact': 1,
-                    'membership': 2
-                };
+            // Update photo remove button visibility
+            const updateRemoveButton = (inputId, previewId, removeBtn) => {
+                const input = document.getElementById(inputId);
+                const preview = document.getElementById(previewId);
+                const removeBtn = preview.closest('.photo-preview-container').querySelector('.photo-remove');
                 
-                const currentStep = stepMap[currentTab];
-                
-                steps.forEach((step, index) => {
-                    step.classList.remove('active');
-                    if (index === currentStep) {
-                        step.classList.add('active');
-                    } else if (index < currentStep) {
-                        step.classList.add('completed');
-                    } else {
-                        step.classList.remove('completed');
-                    }
-                });
-                
-                // Update progress bar
-                const progress = ((currentStep + 1) / steps.length) * 100;
-                progressBar.style.width = `${progress}%`;
-            }
+                if (preview.style.display === 'block') {
+                    removeBtn.style.display = 'flex';
+                } else {
+                    removeBtn.style.display = 'none';
+                }
+            };
             
-            // Validate section
-            function validateSection(section) {
-                let isValid = true;
-                const sectionElement = document.getElementById(section + 'Tab');
-                const requiredInputs = sectionElement.querySelectorAll('[required]');
-                
-                requiredInputs.forEach(input => {
-                    if (!input.value.trim()) {
-                        input.style.borderColor = '#dc3545';
-                        isValid = false;
-                    } else {
-                        input.style.borderColor = '#e9ecef';
-                    }
-                });
-                
-                return isValid;
-            }
-            
-            // Form submission
-            const memberForm = document.getElementById('memberRegistrationForm');
-            if (memberForm) {
-                memberForm.addEventListener('submit', async function(e) {
-                    e.preventDefault();
-                    
-                    // Validate all sections
-                    const allTabs = ['personal', 'contact', 'membership'];
-                    let allValid = true;
-                    
-                    for (const tab of allTabs) {
-                        if (!validateSection(tab)) {
-                            allValid = false;
-                            // Switch to first invalid tab
-                            document.querySelector(`.form-tab[data-tab="${tab}"]`).click();
-                            break;
-                        }
-                    }
-                    
-                    if (allValid && typeof App !== 'undefined') {
-                        // Collect form data
-                        const formData = {
-                            fullName: document.getElementById('fullName').value,
-                            firstName: document.getElementById('firstName').value,
-                            fatherName: document.getElementById('fatherName').value,
-                            grandfatherName: document.getElementById('grandfatherName').value,
-                            birthDate: document.getElementById('birthDate').value,
-                            gender: document.getElementById('gender').value,
-                            residentialAddress: document.getElementById('residentialAddress').value,
-                            neighborhood: document.getElementById('neighborhood').value,
-                            localGovernment: document.getElementById('localGovernment').value,
-                            state: document.getElementById('state').value,
-                            phone1: document.getElementById('phone1').value,
-                            phone2: document.getElementById('phone2').value,
-                            parentsGuardians: document.getElementById('parentsGuardians').value,
-                            parentAddress: document.getElementById('parentAddress').value,
-                            zone: document.getElementById('zone').value,
-                            branch: document.getElementById('branch').value,
-                            recruitmentYear: document.getElementById('recruitmentYear').value,
-                            memberLevel: document.getElementById('memberLevel').value,
-                            photoBase64: document.getElementById('photoInput').dataset.base64 || ''
-                        };
-                        
-                        if (!formData.photoBase64) {
-                            alert('Please upload a passport photograph');
-                            return;
-                        }
-                        
-                        // Submit via App
-                        App.loading(true, 'Registering member...');
-                        try {
-                            const res = await App.api('registerMember', formData);
-                            // Show success message
-                            showSuccessMessage(res.data);
-                        } catch (error) {
-                            console.error('Registration failed:', error);
-                        } finally {
-                            App.loading(false);
-                        }
-                    }
-                });
-            }
-            
-            function showSuccessMessage(data) {
-                // Create success message
-                const successHTML = `
-                    <div class="success-message" id="successMessage" style="max-width: 800px; margin: 40px auto; text-align: center; padding: 40px; background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
-                        <div class="success-icon">
-                            <i class="fas fa-check-circle" style="font-size: 80px; color: #28a745; margin-bottom: 20px;"></i>
-                        </div>
-                        <h2 class="success-title">Registration Successful!</h2>
-                        <p class="success-text">The registration has been completed successfully.</p>
-                        
-                        <div class="id-card" style="background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); border: 3px solid #228B22; border-radius: 15px; padding: 30px; margin: 30px auto; max-width: 600px; box-shadow: 0 10px 30px rgba(34, 139, 34, 0.15);">
-                            <div class="id-header">
-                                <i class="fas fa-id-card"></i>
-                                <h3>Registration ID Card</h3>
-                            </div>
-                            
-                            <div class="id-body" style="display: flex; gap: 30px; margin-bottom: 20px;">
-                                <div class="id-photo-container" style="text-align: center; margin-bottom: 20px;">
-                                    <div class="id-photo-placeholder" style="width: 150px; height: 150px; background: #228B22; color: white; display: inline-flex; align-items: center; justify-content: center; border-radius: 10px; font-size: 32px; font-weight: bold;">IIM</div>
-                                </div>
-                                
-                                <div class="id-details" style="text-align: left;">
-                                    <div class="id-item" style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #e9ecef;">
-                                        <span class="id-label" style="font-weight: 600; color: #495057;">Full Name:</span>
-                                        <span class="id-value" style="font-weight: 700; color: #228B22; font-family: 'Courier New', monospace; font-size: 16px;">${data.fullName}</span>
-                                    </div>
-                                    <div class="id-item" style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #e9ecef;">
-                                        <span class="id-label" style="font-weight: 600; color: #495057;">Global ID:</span>
-                                        <span class="id-value" style="font-weight: 700; color: #228B22; font-family: 'Courier New', monospace; font-size: 16px;">${data.globalId}</span>
-                                    </div>
-                                    <div class="id-item" style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #e9ecef;">
-                                        <span class="id-label" style="font-weight: 600; color: #495057;">Recruitment ID:</span>
-                                        <span class="id-value" style="font-weight: 700; color: #228B22; font-family: 'Courier New', monospace; font-size: 16px;">${data.recruitmentId}</span>
-                                    </div>
-                                    <div class="id-item" style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #e9ecef;">
-                                        <span class="id-label" style="font-weight: 600; color: #495057;">Branch:</span>
-                                        <span class="id-value" style="font-weight: 700; color: #228B22; font-family: 'Courier New', monospace; font-size: 16px;">${data.branch}</span>
-                                    </div>
-                                    <div class="id-item" style="display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #e9ecef;">
-                                        <span class="id-label" style="font-weight: 600; color: #495057;">Level:</span>
-                                        <span class="id-value" style="font-weight: 700; color: #228B22; font-family: 'Courier New', monospace; font-size: 16px;">${data.level || data.memberLevel}</span>
-                                    </div>
-                                    <div class="id-item" style="display: flex; justify-content: space-between; padding: 12px 0;">
-                                        <span class="id-label" style="font-weight: 600; color: #495057;">Date Registered:</span>
-                                        <span class="id-value" style="font-weight: 700; color: #228B22; font-family: 'Courier New', monospace; font-size: 16px;">${new Date().toLocaleDateString()}</span>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="id-footer">
-                                <p class="id-note" style="color: #6c757d; font-size: 0.9rem; margin: 0;">
-                                    This is an official registration document of Intizarul Imamul Muntazar. 
-                                    Keep this information for your records.
-                                </p>
-                            </div>
-                            
-                            <div class="print-actions" style="display: flex; gap: 15px; justify-content: center; margin-top: 30px;">
-                                <button class="btn btn-secondary" onclick="window.print()" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer;">
-                                    <i class="fas fa-print"></i> Print ID Card
-                                </button>
-                                <button class="btn btn-primary" id="registerAnother" style="padding: 10px 20px; background: #228B22; color: white; border: none; border-radius: 5px; cursor: pointer;">
-                                    <i class="fas fa-user-plus"></i> Register Another
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                
-                // Replace form with success message
-                const formContainer = document.getElementById('formContainer');
-                formContainer.innerHTML = successHTML;
-                
-                // Add event listener to register another button
-                setTimeout(() => {
-                    const registerAnotherBtn = document.getElementById('registerAnother');
-                    if (registerAnotherBtn) {
-                        registerAnotherBtn.addEventListener('click', () => {
-                            location.reload();
-                        });
-                    }
-                }, 100);
-            }
+            // Initialize after App loads
+            setTimeout(() => {
+                if (typeof App !== 'undefined') {
+                    console.log('Enhanced photo handling initialized');
+                }
+            }, 1000);
         });
     </script>
+</body>
+</html>op: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .toggle-slider {
+            background-color: #228B22;
+        }
+        
+        input:checked + .toggle-slider:before {
+            transform: translateX(30px);
+        }
+        
+        /* Form Check */
+        .form-check {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        
+        .form-check-input {
+            margin-top: 0.25rem;
+            width: 1.25rem;
+            height: 1.25rem;
+        }
+        
+        .form-check-label {
+            flex: 1;
+            line-height: 1.5;
+            color: #495057;
+        }
+        
+        /* Validation */
+        .validation-error {
+            font-size: 0.875rem;
+            color: #dc3545;
+            margin-top: 0.25rem;
+            display: block;
+            min-height: 1.25rem;
+        }
+        
+        .required-star {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        
+        /* Form Section Indicator */
+        .form-section-indicator {
+            display: flex;
+            justify-content: center;
+            margin: 1.5rem 0;
+            gap: 1rem;
+        }
+        
+        .indicator-step {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: white;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .indicator-step.active {
+            background: white;
+            color: #228B22;
+            transform: scale(1.1);
+        }
+        
+        .indicator-step.completed {
+            background: rgba(255,255,255,0.4);
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .navbar-container {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+            
+            .user-info {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .id-body {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .id-details {
+                min-width: 100%;
+            }
+            
+            .form-tabs {
+                flex-direction: column;
+            }
+            
+            .form-tab {
+                padding: 1rem;
+                justify-content: flex-start;
+                border-bottom: 1px solid #e9ecef;
+            }
+            
+            .form-navigation, .form-actions {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+            
+            .form-navigation button,
+            .form-actions button {
+                width: 100%;
+            }
+        }
+        
+        @media print {
+            .navbar, .form-navigation, .form-actions, .print-actions {
+                display: none !important;
+            }
+            
+            .id-card {
+                border: 2px solid #000;
+                box-shadow: none;
+                margin: 0;
+                padding: 20px;
+            }
+            
+            body {
+                margin: 0;
+                padding: 20px;
+                background: white;
+            }
+        }
+    </style>
+
+    <script src="app.js"></script>
 </body>
 </html>

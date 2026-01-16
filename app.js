@@ -1,13 +1,13 @@
 // app.js - COMPLETE FIXED FRONTEND FOR INTIZARUL IMAMUL MUNTAZAR
+// VERSION: 4.2.0 - FIXED AND ENHANCED
 
 const CONFIG = {
-  API_URL: 'https://script.google.com/macros/s/AKfycbweAMLu87vyBN-2mpW7nx5aPtsFJqObtAQm8opAaWRRycJW1tC8IqofToulRZc2JDkI/exec', // Will be set from localStorage or prompt
+  API_URL: localStorage.getItem('iim_api_url') || 'https://script.google.com/macros/s/AKfycbweAMLu87vyBN-2mpW7nx5aPtsFJqObtAQm8opAaWRRycJW1tC8IqofToulRZc2JDkI/exec',
   MAX_PHOTO_SIZE: 2 * 1024 * 1024,
-  SESSION_TIMEOUT: 30 * 60 * 1000, // 30 minutes
-  REQUEST_TIMEOUT: 30000 // 30 seconds
+  SESSION_TIMEOUT: 30 * 60 * 1000,
+  REQUEST_TIMEOUT: 30000
 };
 
-// ZONES configuration - Should match backend
 const ZONES = {
   'SOKOTO': ['Sokoto', 'Mafara', 'Yaure', 'Illela', 'Zuru', 'Yabo'],
   'KADUNA': ['Kaduna', 'Jaji', 'Mjos'],
@@ -24,9 +24,9 @@ const LEVELS = ['Bakiyatullah', 'Ansarullah', 'Ghalibun', 'Graduate'];
 
 class App {
   static async init() {
-    console.log('App initializing...');
+    console.log('🚀 App initializing...');
     
-    // First, ensure we have API URL
+    // Setup API URL
     await this.setupApiUrl();
     
     this.setupErrorHandling();
@@ -34,86 +34,46 @@ class App {
     this.setupGlobalEvents();
     this.loadCurrentPage();
     
-    console.log('App initialized successfully');
+    console.log('✅ App initialized successfully');
   }
 
   static async setupApiUrl() {
-    // Check localStorage first
     const savedUrl = localStorage.getItem('iim_api_url');
     
-    if (savedUrl) {
+    if (savedUrl && savedUrl !== 'undefined') {
       CONFIG.API_URL = savedUrl;
-      console.log('Using saved API URL:', savedUrl);
+      console.log('🌐 Using saved API URL:', savedUrl);
       return;
     }
     
-    // Try to get from CONFIG (if developer set it)
     if (CONFIG.API_URL && !CONFIG.API_URL.includes('YOUR_NEW_GAS_WEB_APP_URL')) {
       localStorage.setItem('iim_api_url', CONFIG.API_URL);
       return;
     }
     
-    // Show configuration modal
     await this.showApiConfigModal();
   }
 
   static async showApiConfigModal() {
     return new Promise((resolve) => {
-      // Create modal
       const modal = document.createElement('div');
-      modal.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.8);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 99999;
-        backdrop-filter: blur(5px);
-      `;
+      modal.className = 'config-modal';
       
-      // Default URL from tested.html
       const defaultUrl = 'https://script.google.com/macros/s/AKfycbweAMLu87vyBN-2mpW7nx5aPtsFJqObtAQm8opAaWRRycJW1tC8IqofToulRZc2JDkI/exec';
       
       modal.innerHTML = `
-        <div style="
-          background: white;
-          padding: 30px;
-          border-radius: 15px;
-          max-width: 600px;
-          width: 90%;
-          box-shadow: 0 20px 50px rgba(0,0,0,0.3);
-        ">
-          <h2 style="color: #228B22; margin-bottom: 10px;">
-            <i class="fas fa-cogs"></i> Backend Configuration
-          </h2>
-          <p style="margin-bottom: 20px; color: #666;">
-            Please enter your Google Apps Script Web App URL. This is required for the system to work.
-          </p>
+        <div class="config-modal-content">
+          <h2><i class="fas fa-cogs"></i> Backend Configuration</h2>
+          <p>Please enter your Google Apps Script Web App URL. This is required for the system to work.</p>
           
-          <div style="margin-bottom: 20px;">
-            <label style="display: block; margin-bottom: 8px; font-weight: 600;">
-              Backend URL:
-            </label>
-            <input type="text" id="apiUrlInput" 
-                   value="${defaultUrl}"
-                   style="
-                     width: 100%;
-                     padding: 12px;
-                     border: 2px solid #ddd;
-                     border-radius: 8px;
-                     font-family: monospace;
-                     font-size: 14px;
-                   "
-                   placeholder="https://script.google.com/macros/s/.../exec">
+          <div class="form-group">
+            <label>Backend URL:</label>
+            <input type="text" id="apiUrlInput" value="${defaultUrl}" placeholder="https://script.google.com/macros/s/.../exec">
           </div>
           
-          <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+          <div class="info-box">
             <strong>How to get this URL:</strong>
-            <ol style="margin: 10px 0 0 20px; font-size: 14px;">
+            <ol>
               <li>Deploy your Google Script as Web App</li>
               <li>Select "Execute as: Me" and "Who has access: Anyone"</li>
               <li>Copy the provided URL</li>
@@ -121,44 +81,21 @@ class App {
             </ol>
           </div>
           
-          <div style="display: flex; gap: 10px; justify-content: flex-end;">
-            <button id="testConnectionBtn" style="
-              padding: 12px 24px;
-              background: #228B22;
-              color: white;
-              border: none;
-              border-radius: 8px;
-              cursor: pointer;
-              font-weight: 600;
-              display: flex;
-              align-items: center;
-              gap: 8px;
-            ">
+          <div class="config-modal-buttons">
+            <button id="testConnectionBtn" class="config-modal-test">
               <i class="fas fa-plug"></i> Test Connection
             </button>
-            <button id="saveUrlBtn" style="
-              padding: 12px 24px;
-              background: #2c3e50;
-              color: white;
-              border: none;
-              border-radius: 8px;
-              cursor: pointer;
-              font-weight: 600;
-              display: flex;
-              align-items: center;
-              gap: 8px;
-            ">
+            <button id="saveUrlBtn" class="config-modal-save">
               <i class="fas fa-save"></i> Save & Continue
             </button>
           </div>
           
-          <div id="testResult" style="margin-top: 20px; display: none;"></div>
+          <div id="testResult" style="display: none;"></div>
         </div>
       `;
       
       document.body.appendChild(modal);
       
-      // Test connection
       document.getElementById('testConnectionBtn').addEventListener('click', async () => {
         const url = document.getElementById('apiUrlInput').value.trim();
         if (!url) {
@@ -168,11 +105,7 @@ class App {
         
         const resultDiv = document.getElementById('testResult');
         resultDiv.style.display = 'block';
-        resultDiv.innerHTML = `
-          <div style="background: #fff3cd; padding: 10px; border-radius: 5px;">
-            <i class="fas fa-sync fa-spin"></i> Testing connection...
-          </div>
-        `;
+        resultDiv.innerHTML = '<div class="config-test-info"><i class="fas fa-sync fa-spin"></i> Testing connection...</div>';
         
         try {
           const response = await fetch(url, { method: 'GET' });
@@ -180,37 +113,34 @@ class App {
             const data = await response.json();
             if (data.success) {
               resultDiv.innerHTML = `
-                <div style="background: #d4edda; padding: 10px; border-radius: 5px; color: #155724;">
+                <div class="config-test-success">
                   <i class="fas fa-check-circle"></i> Connection successful!
-                  <div style="font-size: 12px; margin-top: 5px;">
-                    System: ${data.system}, Version: ${data.version}
-                  </div>
+                  <div>System: ${data.system}, Version: ${data.version}</div>
                 </div>
               `;
             } else {
               resultDiv.innerHTML = `
-                <div style="background: #f8d7da; padding: 10px; border-radius: 5px; color: #721c24;">
+                <div class="config-test-error">
                   <i class="fas fa-exclamation-triangle"></i> Backend error: ${data.message}
                 </div>
               `;
             }
           } else {
             resultDiv.innerHTML = `
-              <div style="background: #f8d7da; padding: 10px; border-radius: 5px; color: #721c24;">
+              <div class="config-test-error">
                 <i class="fas fa-times-circle"></i> HTTP ${response.status}: ${response.statusText}
               </div>
             `;
           }
         } catch (error) {
           resultDiv.innerHTML = `
-            <div style="background: #f8d7da; padding: 10px; border-radius: 5px; color: #721c24;">
+            <div class="config-test-error">
               <i class="fas fa-unlink"></i> Connection failed: ${error.message}
             </div>
           `;
         }
       });
       
-      // Save and continue
       document.getElementById('saveUrlBtn').addEventListener('click', () => {
         const url = document.getElementById('apiUrlInput').value.trim();
         if (!url) {
@@ -227,21 +157,14 @@ class App {
   }
 
   static setupErrorHandling() {
-    // Global error handler
     window.addEventListener('error', (e) => {
       console.error('Global error:', e.error);
       this.error(`Application error: ${e.message}`);
     });
 
-    // Unhandled promise rejection
     window.addEventListener('unhandledrejection', (e) => {
       console.error('Unhandled promise rejection:', e.reason);
       this.error(`Operation failed: ${e.reason.message || e.reason}`);
-    });
-
-    // Network status
-    window.addEventListener('online', () => {
-      this.success('Back online');
     });
 
     window.addEventListener('offline', () => {
@@ -257,19 +180,18 @@ class App {
     if (loggedIn && loginTime) {
       const sessionAge = Date.now() - new Date(loginTime).getTime();
       if (sessionAge > CONFIG.SESSION_TIMEOUT) {
-        console.log('Session expired, logging out');
-        this.logout();
+        this.showSessionWarning();
         return;
       }
     }
 
-    // Redirect unauthorized access
+    const role = localStorage.getItem('userRole');
+    
     if (['dashboard.html', 'register.html'].includes(page) && !loggedIn) {
       location.href = 'login.html';
       return;
     }
     
-    const role = localStorage.getItem('userRole');
     if (page === 'dashboard.html' && role !== 'admin') {
       location.href = 'login.html?role=admin';
       return;
@@ -281,16 +203,29 @@ class App {
     }
   }
 
-  // 🔥 FIXED: Form-data API function
-  static async api(action, data = {}, options = {}) {
+  static showSessionWarning() {
+    const warning = document.createElement('div');
+    warning.className = 'session-warning';
+    warning.innerHTML = `
+      <i class="fas fa-exclamation-triangle"></i>
+      <span>Your session has expired. Please login again.</span>
+      <button onclick="App.logout()" style="background:none;border:none;color:inherit;margin-left:auto;">OK</button>
+    `;
+    document.body.appendChild(warning);
+    
+    setTimeout(() => {
+      warning.remove();
+      App.logout();
+    }, 5000);
+  }
+
+  static async api(action, data = {}) {
     console.log(`📡 API Request: ${action}`, data);
     
-    // Check if we have API URL
     if (!CONFIG.API_URL) {
       throw new Error('API URL not configured. Please set up backend URL.');
     }
     
-    // Create abort controller for timeout
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), CONFIG.REQUEST_TIMEOUT);
     
@@ -304,31 +239,24 @@ class App {
         clientIp: 'web_client'
       };
       
-      // 🔥 FIXED: Use FormData exactly like tested.html
       const formData = new FormData();
       formData.append('data', JSON.stringify(requestData));
-      
-      console.log('Form data prepared:', Object.fromEntries(formData));
       
       const response = await fetch(CONFIG.API_URL, {
         method: 'POST',
         body: formData,
         signal: controller.signal
-        // 🔥 NO headers - FormData sets content-type automatically
       });
       
       clearTimeout(timeoutId);
-      
-      console.log(`📡 Response Status: ${response.status}`);
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
       
       const responseText = await response.text();
-      console.log(`📡 Raw Response (first 500 chars):`, responseText.substring(0, 500));
-      
       let jsonResponse;
+      
       try {
         jsonResponse = JSON.parse(responseText);
       } catch (parseError) {
@@ -337,11 +265,9 @@ class App {
       }
       
       if (!jsonResponse.success) {
-        console.error(`❌ API Error: ${jsonResponse.message}`);
         throw new Error(jsonResponse.message || 'Request failed');
       }
       
-      console.log(`✅ API Success: ${action}`);
       return jsonResponse;
       
     } catch (error) {
@@ -352,12 +278,7 @@ class App {
       if (error.name === 'AbortError') {
         userMessage = 'Request timeout. Please try again.';
       } else if (error.message.includes('Failed to fetch')) {
-        userMessage = `Cannot connect to server. Please check:
-1. Your internet connection
-2. The API URL is correct: ${CONFIG.API_URL}
-3. The Google Script is deployed as Web App`;
-      } else if (error.message.includes('HTTP')) {
-        userMessage = `Server error: ${error.message}`;
+        userMessage = `Cannot connect to server. Please check your internet connection and API URL.`;
       } else {
         userMessage = error.message;
       }
@@ -373,112 +294,40 @@ class App {
     if (!loader && show) {
       loader = document.createElement('div');
       loader.id = 'globalLoader';
-      loader.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.8);
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        z-index: 9999;
-        color: white;
-        font-size: 18px;
-        backdrop-filter: blur(5px);
-      `;
-      
       loader.innerHTML = `
-        <div class="loading-spinner" style="
-          width: 60px;
-          height: 60px;
-          border: 5px solid rgba(255,255,255,0.3);
-          border-top: 5px solid #228B22;
-          border-radius: 50%;
-          animation: spin 1s linear infinite;
-          margin-bottom: 20px;
-        "></div>
-        <p style="text-align: center; max-width: 300px;">${msg}</p>
-        <style>
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-        </style>
+        <div class="loading-spinner"></div>
+        <p>${msg}</p>
       `;
-      
       document.body.appendChild(loader);
     } else if (loader) {
       loader.style.display = show ? 'flex' : 'none';
+      if (show && msg) {
+        loader.querySelector('p').textContent = msg;
+      }
     }
   }
 
   static error(msg) {
     console.error(`Error: ${msg}`);
     
-    // Remove existing error
     const existing = document.querySelector('.error-toast');
     if (existing) existing.remove();
     
     const toast = document.createElement('div');
     toast.className = 'error-toast';
-    toast.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: #dc3545;
-      color: white;
-      padding: 15px 20px;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-      z-index: 10000;
-      max-width: 400px;
-      animation: slideIn 0.3s ease;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    `;
-    
     toast.innerHTML = `
-      <i class="fas fa-exclamation-circle" style="font-size: 20px; flex-shrink: 0;"></i>
+      <i class="fas fa-exclamation-circle"></i>
       <span>${msg}</span>
-      <button onclick="this.parentElement.remove()" style="
-        background: none;
-        border: none;
-        color: white;
-        cursor: pointer;
-        margin-left: auto;
-        padding: 0 5px;
-      ">×</button>
+      <button onclick="this.parentElement.remove()">×</button>
     `;
     
     document.body.appendChild(toast);
     
     setTimeout(() => {
       if (toast.parentElement) {
-        toast.style.animation = 'slideOut 0.3s ease';
-        setTimeout(() => toast.remove(), 300);
+        toast.remove();
       }
     }, 5000);
-    
-    // Add animations if not exists
-    if (!document.getElementById('toastAnimations')) {
-      const style = document.createElement('style');
-      style.id = 'toastAnimations';
-      style.textContent = `
-        @keyframes slideIn {
-          from { transform: translateX(100%); opacity: 0; }
-          to { transform: translateX(0); opacity: 1; }
-        }
-        @keyframes slideOut {
-          from { transform: translateX(0); opacity: 1; }
-          to { transform: translateX(100%); opacity: 0; }
-        }
-      `;
-      document.head.appendChild(style);
-    }
   }
 
   static success(msg) {
@@ -489,50 +338,26 @@ class App {
     
     const toast = document.createElement('div');
     toast.className = 'success-toast';
-    toast.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: #28a745;
-      color: white;
-      padding: 15px 20px;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-      z-index: 10000;
-      max-width: 400px;
-      animation: slideIn 0.3s ease;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    `;
-    
     toast.innerHTML = `
-      <i class="fas fa-check-circle" style="font-size: 20px; flex-shrink: 0;"></i>
+      <i class="fas fa-check-circle"></i>
       <span>${msg}</span>
-      <button onclick="this.parentElement.remove()" style="
-        background: none;
-        border: none;
-        color: white;
-        cursor: pointer;
-        margin-left: auto;
-        padding: 0 5px;
-      ">×</button>
+      <button onclick="this.parentElement.remove()">×</button>
     `;
     
     document.body.appendChild(toast);
     
     setTimeout(() => {
       if (toast.parentElement) {
-        toast.style.animation = 'slideOut 0.3s ease';
-        setTimeout(() => toast.remove(), 300);
+        toast.remove();
       }
     }, 3000);
   }
 
   static setupGlobalEvents() {
     // Password toggle
-    document.querySelectorAll('.password-toggle').forEach(btn => {
-      btn.addEventListener('click', () => {
+    document.addEventListener('click', (e) => {
+      if (e.target.closest('.password-toggle')) {
+        const btn = e.target.closest('.password-toggle');
         const input = btn.closest('.input-with-icon').querySelector('input');
         const icon = btn.querySelector('i');
         if (input.type === 'password') {
@@ -544,7 +369,7 @@ class App {
           icon.classList.remove('fa-eye-slash');
           icon.classList.add('fa-eye');
         }
-      });
+      }
     });
     
     // Form validation
@@ -557,14 +382,14 @@ class App {
 
   static validateField(input) {
     if (!input.value.trim() && input.required) {
-      input.style.borderColor = '#dc3545';
+      input.classList.add('invalid');
       return false;
     }
     
     if (input.type === 'email' && input.value) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(input.value)) {
-        input.style.borderColor = '#dc3545';
+        input.classList.add('invalid');
         return false;
       }
     }
@@ -572,18 +397,18 @@ class App {
     if (input.type === 'tel' && input.value) {
       const phoneRegex = /^[0-9+\s\-\(\)]{10,15}$/;
       if (!phoneRegex.test(input.value)) {
-        input.style.borderColor = '#dc3545';
+        input.classList.add('invalid');
         return false;
       }
     }
     
-    input.style.borderColor = '';
+    input.classList.remove('invalid');
+    input.classList.add('valid');
     return true;
   }
 
   static loadCurrentPage() {
     const page = location.pathname.split('/').pop() || 'index.html';
-    console.log(`Loading page: ${page}`);
     
     switch(page) {
       case 'login.html':
@@ -602,48 +427,29 @@ class App {
   }
 
   static async setupLanding() {
-    console.log('Setting up landing page...');
-    
-    // Update current year
     document.getElementById('currentYear').textContent = new Date().getFullYear();
     
-    // Update branch count from ZONES
     const totalBranches = Object.values(ZONES).flat().length;
     document.getElementById('totalBranches').textContent = totalBranches;
     document.getElementById('totalZones').textContent = Object.keys(ZONES).length;
     
-    // Try to load live stats if API is available
     if (CONFIG.API_URL) {
       try {
-        // 🔥 FIXED: Simple GET without query params
         const response = await fetch(CONFIG.API_URL);
         if (response.ok) {
           const data = await response.json();
           if (data.success) {
             document.getElementById('totalMembers').textContent = data.data?.totalMembers || 0;
             document.getElementById('totalMasul').textContent = data.data?.totalMasul || 0;
-            // Already set totalBranches above
           }
         }
       } catch (error) {
-        console.log('Could not load live stats, using defaults');
+        console.log('Using default stats');
       }
     }
   }
 
   static setupLogin() {
-    console.log('Setting up login page...');
-    
-    // Remove default credentials from display (security)
-    const accessNote = document.querySelector('.access-note');
-    if (accessNote) {
-      accessNote.innerHTML = `
-        <strong>Access Codes:</strong><br>
-        • Contact your administrator for access codes<br>
-        <small>Default codes should be changed after first login</small>
-      `;
-    }
-    
     const urlParams = new URLSearchParams(location.search);
     const roleParam = urlParams.get('role');
     
@@ -653,7 +459,6 @@ class App {
       document.getElementById('masulBtn').click();
     }
     
-    // Role selection
     document.querySelectorAll('.role-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
@@ -674,7 +479,6 @@ class App {
     
     this.populateBranches('branchSelect');
     
-    // Login form
     document.getElementById('loginForm').addEventListener('submit', async e => {
       e.preventDefault();
       
@@ -721,7 +525,6 @@ class App {
         
       } catch (err) {
         console.error('Login failed:', err);
-        // Error shown by api() function
       } finally {
         this.loading(false);
       }
@@ -818,7 +621,6 @@ class App {
           
           let { width, height } = img;
           
-          // Calculate new dimensions
           const maxSize = 800;
           if (width > maxSize || height > maxSize) {
             if (width > height) {
@@ -833,7 +635,6 @@ class App {
           canvas.width = width;
           canvas.height = height;
           
-          // Draw and compress
           ctx.drawImage(img, 0, 0, width, height);
           
           try {
@@ -867,22 +668,23 @@ class App {
     if (!area || !input || !preview) return;
     
     area.addEventListener('click', () => input.click());
-    area.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      area.style.borderColor = '#228B22';
-      area.style.backgroundColor = 'rgba(34, 139, 34, 0.1)';
+    
+    ['dragover', 'dragenter'].forEach(event => {
+      area.addEventListener(event, (e) => {
+        e.preventDefault();
+        area.classList.add('drag-over');
+      });
     });
     
-    area.addEventListener('dragleave', () => {
-      area.style.borderColor = '';
-      area.style.backgroundColor = '';
+    ['dragleave', 'dragend', 'drop'].forEach(event => {
+      area.addEventListener(event, (e) => {
+        e.preventDefault();
+        area.classList.remove('drag-over');
+      });
     });
     
     area.addEventListener('drop', (e) => {
       e.preventDefault();
-      area.style.borderColor = '';
-      area.style.backgroundColor = '';
-      
       if (e.dataTransfer.files.length > 0) {
         input.files = e.dataTransfer.files;
         input.dispatchEvent(new Event('change'));
@@ -961,7 +763,7 @@ class App {
       });
     });
     
-    // Form tabs
+    // Form tabs with improved navigation
     document.querySelectorAll('.form-tab').forEach(tab => {
       tab.addEventListener('click', () => {
         const tabId = tab.dataset.tab;
@@ -971,6 +773,40 @@ class App {
         
         tab.classList.add('active');
         document.getElementById(tabId + 'Tab').classList.add('active');
+        
+        // Update progress bar
+        this.updateFormProgress(tabId);
+      });
+    });
+    
+    // Next/Previous buttons
+    document.querySelectorAll('.next-tab').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const currentTab = document.querySelector('.form-section.active');
+        const currentTabId = currentTab.id.replace('Tab', '');
+        const tabs = ['personal', 'contact', 'membership'];
+        const currentIndex = tabs.indexOf(currentTabId);
+        
+        if (currentIndex < tabs.length - 1) {
+          const nextTab = tabs[currentIndex + 1];
+          document.querySelector(`.form-tab[data-tab="${nextTab}"]`).click();
+        }
+      });
+    });
+    
+    document.querySelectorAll('.prev-tab').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const currentTab = document.querySelector('.form-section.active');
+        const currentTabId = currentTab.id.replace('Tab', '');
+        const tabs = ['personal', 'contact', 'membership'];
+        const currentIndex = tabs.indexOf(currentTabId);
+        
+        if (currentIndex > 0) {
+          const prevTab = tabs[currentIndex - 1];
+          document.querySelector(`.form-tab[data-tab="${prevTab}"]`).click();
+        }
       });
     });
     
@@ -978,44 +814,34 @@ class App {
     document.getElementById('memberRegistrationForm').addEventListener('submit', async e => {
       e.preventDefault();
       
-      // Collect form data
-      const formData = {};
-      const elements = e.target.elements;
-      
-      for (let element of elements) {
-        if (element.name || element.id) {
-          const key = element.name || element.id;
-          if (element.type === 'checkbox') {
-            formData[key] = element.checked;
-          } else if (element.type === 'file') {
-            formData[key] = element.dataset.base64 || '';
-          } else {
-            formData[key] = element.value.trim();
-          }
-        }
-      }
-      
-      // Required fields validation
+      // Validate all required fields first
       const requiredFields = [
         'fullName', 'firstName', 'fatherName', 'birthDate', 'gender',
         'residentialAddress', 'phone1', 'memberLevel', 'zone', 'branch',
         'recruitmentYear'
       ];
       
-      for (const field of requiredFields) {
-        if (!formData[field]) {
+      let isValid = true;
+      requiredFields.forEach(field => {
+        const element = document.getElementById(field);
+        if (element && !element.value.trim()) {
+          element.classList.add('invalid');
+          isValid = false;
           this.error(`Please fill in ${field.replace(/([A-Z])/g, ' $1').toLowerCase()}`);
-          return;
         }
-      }
+      });
       
-      if (!formData.photoBase64) {
+      if (!isValid) return;
+      
+      // Check photo
+      const photoInput = document.getElementById('photoInput');
+      if (!photoInput.dataset.base64) {
         this.error('Please upload a passport photograph');
         return;
       }
       
       // Validate date
-      const birthDate = new Date(formData.birthDate);
+      const birthDate = new Date(document.getElementById('birthDate').value);
       const today = new Date();
       const minAge = new Date(today.getFullYear() - 100, today.getMonth(), today.getDate());
       const maxAge = new Date(today.getFullYear() - 10, today.getMonth(), today.getDate());
@@ -1028,13 +854,36 @@ class App {
       this.loading(true, 'Registering member...');
       
       try {
+        const formData = {
+          fullName: document.getElementById('fullName').value,
+          firstName: document.getElementById('firstName').value,
+          fatherName: document.getElementById('fatherName').value,
+          grandfatherName: document.getElementById('grandfatherName').value,
+          birthDate: document.getElementById('birthDate').value,
+          gender: document.getElementById('gender').value,
+          residentialAddress: document.getElementById('residentialAddress').value,
+          neighborhood: document.getElementById('neighborhood').value,
+          localGovernment: document.getElementById('localGovernment').value,
+          state: document.getElementById('state').value,
+          phone1: document.getElementById('phone1').value,
+          phone2: document.getElementById('phone2').value,
+          parentsGuardians: document.getElementById('parentsGuardians').value,
+          parentAddress: document.getElementById('parentAddress').value,
+          parentNeighborhood: document.getElementById('parentNeighborhood').value,
+          parentLGA: document.getElementById('parentLGA').value,
+          parentState: document.getElementById('parentState').value,
+          zone: document.getElementById('zone').value,
+          branch: document.getElementById('branch').value,
+          recruitmentYear: document.getElementById('recruitmentYear').value,
+          memberLevel: document.getElementById('memberLevel').value,
+          photoBase64: photoInput.dataset.base64
+        };
+        
         const res = await this.api('registerMember', formData);
-        console.log('Registration successful:', res);
         this.showIdCard(res.data);
         this.success('Member registered successfully!');
       } catch (err) {
         console.error('Registration error:', err);
-        // Error shown by api()
       } finally {
         this.loading(false);
       }
@@ -1062,49 +911,55 @@ class App {
     document.getElementById('masulRegistrationForm').addEventListener('submit', async e => {
       e.preventDefault();
       
-      const formData = {};
-      const elements = e.target.elements;
-      
-      for (let element of elements) {
-        if (element.name || element.id) {
-          const key = element.name || element.id;
-          if (element.type === 'checkbox') {
-            formData[key] = element.checked;
-          } else if (element.type === 'file') {
-            formData[key] = element.dataset.base64 || '';
-          } else {
-            formData[key] = element.value.trim();
-          }
-        }
-      }
-      
-      // Required fields for Mas'ul
       const requiredFields = [
-        'fullName', 'fatherName', 'birthDate', 'email', 'phone1',
-        'educationLevel', 'residentialAddress', 'zone', 'branch',
-        'recruitmentYear'
+        'masulFullName', 'masulFatherName', 'masulBirthDate', 'masulEmail', 'masulPhone1',
+        'masulEducationLevel', 'masulResidentialAddress', 'masulZone', 'masulBranch',
+        'masulRecruitmentYear'
       ];
       
-      for (const field of requiredFields) {
-        if (!formData[field]) {
-          this.error(`Please fill in ${field.replace(/([A-Z])/g, ' $1').toLowerCase()}`);
-          return;
+      let isValid = true;
+      requiredFields.forEach(field => {
+        const element = document.getElementById(field);
+        if (element && !element.value.trim()) {
+          element.classList.add('invalid');
+          isValid = false;
+          this.error(`Please fill in ${field.replace('masul', '').replace(/([A-Z])/g, ' $1').toLowerCase()}`);
         }
-      }
+      });
       
-      if (!formData.photoBase64) {
-        this.error('Please upload a passport photograph');
+      if (!isValid) return;
+      
+      if (!document.getElementById('masulDeclaration').checked) {
+        this.error('Please accept the declaration');
         return;
       }
       
-      if (!formData.declaration) {
-        this.error('Please accept the declaration');
+      const photoInput = document.getElementById('masulPhotoInput');
+      if (!photoInput.dataset.base64) {
+        this.error('Please upload a passport photograph');
         return;
       }
       
       this.loading(true, 'Registering Mas\'ul...');
       
       try {
+        const formData = {
+          fullName: document.getElementById('masulFullName').value,
+          fatherName: document.getElementById('masulFatherName').value,
+          birthDate: document.getElementById('masulBirthDate').value,
+          email: document.getElementById('masulEmail').value,
+          phone1: document.getElementById('masulPhone1').value,
+          phone2: document.getElementById('masulPhone2').value,
+          educationLevel: document.getElementById('masulEducationLevel').value,
+          courseStudying: document.getElementById('masulCourseStudying').value,
+          residentialAddress: document.getElementById('masulResidentialAddress').value,
+          zone: document.getElementById('masulZone').value,
+          branch: document.getElementById('masulBranch').value,
+          recruitmentYear: document.getElementById('masulRecruitmentYear').value,
+          declaration: true,
+          photoBase64: photoInput.dataset.base64
+        };
+        
         const res = await this.api('registerMasul', formData);
         this.showIdCard(res.data);
         this.success('Mas\'ul registered successfully!');
@@ -1120,6 +975,18 @@ class App {
       document.getElementById('masulToggle').checked = false;
       document.getElementById('masulToggle').dispatchEvent(new Event('change'));
     });
+  }
+
+  static updateFormProgress(currentTab) {
+    const progressBar = document.getElementById('formProgress');
+    if (!progressBar) return;
+    
+    const tabs = ['personal', 'contact', 'membership'];
+    const currentIndex = tabs.indexOf(currentTab);
+    const progress = ((currentIndex + 1) / tabs.length) * 100;
+    
+    progressBar.style.width = `${progress}%`;
+    progressBar.textContent = `${Math.round(progress)}%`;
   }
 
   static showIdCard(data) {
@@ -1166,8 +1033,12 @@ class App {
         successMessage.style.display = 'none';
         formContainer.style.display = 'block';
         document.getElementById('memberRegistrationForm').reset();
+        document.getElementById('masulRegistrationForm').reset();
         document.getElementById('photoPreview').style.display = 'none';
+        document.getElementById('masulPhotoPreview').style.display = 'none';
         document.getElementById('photoInput').dataset.base64 = '';
+        document.getElementById('masulPhotoInput').dataset.base64 = '';
+        document.querySelector('.form-tab[data-tab="personal"]').click();
       };
     }
   }
@@ -1177,7 +1048,8 @@ class App {
     
     // Sidebar toggle
     document.getElementById('menuToggle').addEventListener('click', () => {
-      document.getElementById('sidebar').classList.toggle('active');
+      document.getElementById('sidebar').classList.toggle('collapsed');
+      document.querySelector('.main-content').classList.toggle('sidebar-collapsed');
     });
     
     // Menu navigation
@@ -1195,10 +1067,15 @@ class App {
         document.getElementById(section + 'Section').classList.add('active');
         document.getElementById('pageTitle').textContent = item.textContent.trim();
         
-        // Load section data
         const methodName = `load${section.charAt(0).toUpperCase() + section.slice(1)}`;
         if (this[methodName] && typeof this[methodName] === 'function') {
           this[methodName]();
+        }
+        
+        // Close sidebar on mobile after selection
+        if (window.innerWidth < 992) {
+          document.getElementById('sidebar').classList.remove('collapsed');
+          document.querySelector('.main-content').classList.remove('sidebar-collapsed');
         }
       });
     });
@@ -1226,6 +1103,33 @@ class App {
     document.getElementById('applyFilters').addEventListener('click', () => this.loadMembers());
     document.getElementById('memberSearch').addEventListener('keyup', (e) => {
       if (e.key === 'Enter') this.loadMembers();
+    });
+    
+    // Settings form
+    document.getElementById('settingsForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const adminCode = document.getElementById('adminAccessCode').value;
+      const masulCode = document.getElementById('masulAccessCode').value;
+      
+      if (!adminCode && !masulCode) {
+        this.error('Please enter at least one access code');
+        return;
+      }
+      
+      this.loading(true, 'Updating settings...');
+      
+      try {
+        await this.api('updateSettings', {
+          adminAccessCode: adminCode,
+          masulAccessCode: masulCode
+        });
+        this.success('Settings updated successfully');
+      } catch (error) {
+        console.error('Settings update failed:', error);
+      } finally {
+        this.loading(false);
+      }
     });
     
     // Export buttons
@@ -1278,15 +1182,12 @@ class App {
         `;
       }
       
-      // Update counters
       document.getElementById('membersCount').textContent = stats.totalMembers || 0;
       document.getElementById('masulCount').textContent = stats.totalMasul || 0;
       
-      // Create charts
       this.createZoneChart(stats.membersPerBranch || {});
       this.createLevelChart(stats.membersPerLevel || {});
       
-      // Load recent activity
       await this.loadRecentActivity();
       
     } catch (error) {
@@ -1301,7 +1202,6 @@ class App {
     const ctx = document.getElementById('zoneChart');
     if (!ctx) return;
     
-    // Destroy existing chart
     if (ctx.chart) {
       ctx.chart.destroy();
     }
@@ -1318,16 +1218,12 @@ class App {
           backgroundColor: [
             '#228B22', '#32CD32', '#E67E22', '#2C3E50', '#17A2B8',
             '#6F42C1', '#20C997', '#FD7E14', '#DC3545'
-          ],
-          borderWidth: 1
+          ]
         }]
       },
       options: {
         responsive: true,
         plugins: {
-          legend: {
-            position: 'right',
-          },
           title: {
             display: true,
             text: 'Members Distribution by Branch'
@@ -1355,9 +1251,7 @@ class App {
         datasets: [{
           label: 'Members',
           data: data,
-          backgroundColor: '#228B22',
-          borderColor: '#1a6b1a',
-          borderWidth: 1
+          backgroundColor: '#228B22'
         }]
       },
       options: {
@@ -1368,12 +1262,6 @@ class App {
             title: {
               display: true,
               text: 'Number of Members'
-            }
-          },
-          x: {
-            title: {
-              display: true,
-              text: 'Member Level'
             }
           }
         },
@@ -1435,8 +1323,9 @@ class App {
         if (members.length === 0) {
           tbody.innerHTML = `
             <tr>
-              <td colspan="10" class="text-center">
-                <p style="padding: 40px; color: #666;">No members found matching your criteria</p>
+              <td colspan="10" class="text-center empty-state">
+                <i class="fas fa-users-slash fa-3x"></i>
+                <p>No members found matching your criteria</p>
               </td>
             </tr>
           `;
@@ -1446,7 +1335,7 @@ class App {
               <td><input type="checkbox" class="selectMember" data-id="${member.id}"></td>
               <td>
                 ${member.photoUrl ? 
-                  `<img src="${member.photoUrl}" class="table-photo" alt="Photo" onerror="this.src='https://via.placeholder.com/50/228B22/FFFFFF?text=IIM'">` : 
+                  `<img src="${member.photoUrl}" class="table-photo" alt="Photo">` : 
                   `<div class="photo-placeholder">IIM</div>`
                 }
               </td>
@@ -1456,7 +1345,7 @@ class App {
               <td><span class="badge ${member.gender === 'Brother' ? 'badge-primary' : 'badge-pink'}">${member.gender}</span></td>
               <td>${member.phone}</td>
               <td>${member.branch}</td>
-              <td><span class="badge badge-level-${member.level.toLowerCase()}">${member.level}</span></td>
+              <td><span class="badge badge-level-${member.level?.toLowerCase()}">${member.level}</span></td>
               <td>
                 <div class="action-buttons">
                   <button class="btn-icon btn-view" onclick="App.viewMember('${member.id}')" title="View Details">
@@ -1500,7 +1389,280 @@ class App {
       const res = await this.api('getMemberDetails', { memberId: id });
       const data = res.data;
       
-      // Create modal with member details
+      const modal = this.createMemberModal(data);
+      document.body.appendChild(modal);
+      
+    } catch (error) {
+      console.error('Failed to load member details:', error);
+      this.error('Failed to load member details');
+    } finally {
+      this.loading(false);
+    }
+  }
+
+  static createMemberModal(data) {
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.innerHTML = `
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3><i class="fas fa-user"></i> Member Details</h3>
+          <button class="modal-close">×</button>
+        </div>
+        
+        <div class="modal-body">
+          ${this.createMemberDetailsHTML(data)}
+        </div>
+        
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="this.closest('.modal').remove()">Close</button>
+          <button class="btn btn-primary" onclick="window.print()">
+            <i class="fas fa-print"></i> Print Profile
+          </button>
+        </div>
+      </div>
+    `;
+    
+    modal.querySelector('.modal-close').addEventListener('click', () => modal.remove());
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.remove();
+      }
+    });
+    
+    return modal;
+  }
+
+  static createMemberDetailsHTML(data) {
+    return `
+      <div class="member-profile">
+        <div class="member-photo">
+          <img src="${data.Photo_URL || 'https://via.placeholder.com/200/228B22/FFFFFF?text=IIM'}" alt="Photo">
+        </div>
+        <div class="member-info">
+          <h4>${data.Full_Name || 'N/A'}</h4>
+          <div class="info-grid">
+            <div><strong>Global ID:</strong> <code>${data.Global_ID}</code></div>
+            <div><strong>Recruitment ID:</strong> <code>${data.Recruitment_ID}</code></div>
+            <div><strong>Type:</strong> ${data.Type}</div>
+            <div><strong>Gender:</strong> ${data.Gender}</div>
+            <div><strong>Branch:</strong> ${data.Branch}</div>
+            <div><strong>Zone:</strong> ${data.Zone}</div>
+            <div><strong>Level:</strong> ${data.Member_Level}</div>
+            <div><strong>Status:</strong> ${data.Status}</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="contact-section">
+        <h5>Contact Information</h5>
+        <div class="info-grid">
+          <div><strong>Phone 1:</strong> ${data.Phone_1 || 'N/A'}</div>
+          <div><strong>Phone 2:</strong> ${data.Phone_2 || 'N/A'}</div>
+          <div><strong>Email:</strong> ${data.Email || 'N/A'}</div>
+          <div><strong>Address:</strong> ${data.Residential_Address || 'N/A'}</div>
+        </div>
+      </div>
+      
+      ${data.Type === 'Member' ? `
+        <div class="personal-section">
+          <h5>Personal Information</h5>
+          <div class="info-grid">
+            <div><strong>Father's Name:</strong> ${data.Father_Name || 'N/A'}</div>
+            <div><strong>Birth Date:</strong> ${data.Birth_Date || 'N/A'}</div>
+            <div><strong>Local Government:</strong> ${data.Local_Government || 'N/A'}</div>
+            <div><strong>State:</strong> ${data.State || 'N/A'}</div>
+            <div><strong>Parents/Guardians:</strong> ${data.Parents_Guardians || 'N/A'}</div>
+            <div><strong>Registration Date:</strong> ${new Date(data.Registration_Date).toLocaleDateString()}</div>
+          </div>
+        </div>
+      ` : ''}
+    `;
+  }
+
+  static async promoteMember(id) {
+    const newLevel = prompt(`Enter new level for member ${id}:\n\nAvailable levels: ${LEVELS.join(', ')}`);
+    
+    if (!newLevel || !LEVELS.includes(newLevel)) {
+      if (newLevel) this.error('Invalid level. Please select from: ' + LEVELS.join(', '));
+      return;
+    }
+    
+    const notes = prompt('Enter promotion notes (optional):');
+    
+    if (confirm(`Promote member to ${newLevel}?`)) {
+      this.loading(true, 'Promoting member...');
+      
+      try {
+        await this.api('promoteMember', { 
+          memberId: id, 
+          newLevel: newLevel,
+          notes: notes || ''
+        });
+        
+        this.success('Member promoted successfully!');
+        this.loadMembers();
+      } catch (error) {
+        console.error('Promotion failed:', error);
+      } finally {
+        this.loading(false);
+      }
+    }
+  }
+
+  static async transferMember(id) {
+    const allBranches = Object.values(ZONES).flat();
+    
+    let branchList = '';
+    allBranches.forEach((branch, index) => {
+      branchList += `${index + 1}. ${branch}\n`;
+    });
+    
+    const newBranch = prompt(`Enter new branch for member ${id}:\n\nAvailable branches:\n${branchList}`);
+    
+    if (!newBranch || !allBranches.includes(newBranch)) {
+      if (newBranch) this.error('Invalid branch. Please select from the list.');
+      return;
+    }
+    
+    const notes = prompt('Enter transfer notes (optional):');
+    
+    if (confirm(`Transfer member to ${newBranch}?`)) {
+      this.loading(true, 'Transferring member...');
+      
+      try {
+        await this.api('transferMember', { 
+          memberId: id, 
+          newBranch: newBranch,
+          notes: notes || ''
+        });
+        
+        this.success('Member transferred successfully!');
+        this.loadMembers();
+      } catch (error) {
+        console.error('Transfer failed:', error);
+      } finally {
+        this.loading(false);
+      }
+    }
+  }
+
+  static async exportData(type) {
+    if (!confirm(`Export ${type} data as CSV?`)) return;
+    
+    this.loading(true, 'Exporting data...');
+    
+    try {
+      const res = await this.api('exportData', { type: type });
+      const data = res.data;
+      
+      if (data && data.downloadUrl) {
+        window.open(data.downloadUrl, '_blank');
+        this.success(`Export completed! File: ${data.fileName}`);
+      } else {
+        throw new Error('No download URL received');
+      }
+    } catch (error) {
+      console.error('Export failed:', error);
+      this.error('Export failed: ' + (error.message || 'Unknown error'));
+    } finally {
+      this.loading(false);
+    }
+  }
+
+  static async backupSystem() {
+    if (!confirm('Create system backup? This may take a moment.')) return;
+    
+    this.loading(true, 'Creating backup...');
+    
+    try {
+      const res = await this.api('backupSystem');
+      const data = res.data;
+      
+      if (data && data.backupUrl) {
+        window.open(data.backupUrl, '_blank');
+        this.success('Backup created successfully!');
+      } else {
+        throw new Error('No backup URL received');
+      }
+    } catch (error) {
+      console.error('Backup failed:', error);
+      this.error('Backup failed: ' + (error.message || 'Unknown error'));
+    } finally {
+      this.loading(false);
+    }
+  }
+
+  static logout() {
+    if (confirm('Are you sure you want to logout?')) {
+      localStorage.clear();
+      this.success('Logged out successfully');
+      setTimeout(() => {
+        location.href = 'index.html';
+      }, 1000);
+    }
+  }
+
+  static switchSection(section) {
+    const item = document.querySelector(`.menu-item[data-section="${section}"]`);
+    if (item) {
+      item.click();
+    }
+  }
+}
+
+// Initialize app when DOM is loaded
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded, initializing App...');
+    App.init();
+  });
+} else {
+  console.log('DOM already loaded, initializing App...');
+  App.init();
+}
+
+// Make App available globally
+window.App = App;
+console.log('✅ App.js loaded successfully');          <td>
+                ${m.photoUrl || m.Photo_URL ? 
+                  `<img src="${m.photoUrl || m.Photo_URL}" class="table-photo" alt="Photo">` : 
+                  `<div class="photo-placeholder">${(m.fullName || m.Full_Name || 'M').charAt(0)}</div>`
+                }
+              </td>
+              <td><code>${m.id || m.Global_ID || 'N/A'}</code></td>
+              <td><code>${m.recruitmentId || m.Recruitment_ID || 'N/A'}</code></td>
+              <td><strong>${m.fullName || m.Full_Name || 'N/A'}</strong></td>
+              <td>${m.email || m.Email || 'N/A'}</td>
+              <td>${m.phone || m.Phone_1 || 'N/A'}</td>
+              <td>${m.branch || m.Branch || 'N/A'}</td>
+              <td>${m.recruitmentYear || m.Recruitment_Year || 'N/A'}</td>
+              <td>
+                <div class="action-buttons">
+                  <button class="btn-icon btn-view" onclick="App.viewMember('${m.id || m.Global_ID}')">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `).join('');
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load Mas\'ul:', error);
+      this.error('Failed to load Mas\'ul');
+    } finally {
+      this.loading(false);
+    }
+  }
+
+  static async viewMember(id) {
+    this.loading(true, 'Loading member details...');
+    
+    try {
+      const res = await this.api('getMemberDetails', { memberId: id });
+      const data = res.data;
+      
       const modal = this.createMemberModal(data);
       document.body.appendChild(modal);
       
@@ -1597,14 +1759,11 @@ class App {
       </div>
     `;
     
-    // Populate modal body
     const modalBody = modal.querySelector('.modal-body');
     modalBody.innerHTML = this.createMemberDetailsHTML(data);
     
-    // Close modal on X click
     modal.querySelector('.modal-close').addEventListener('click', () => modal.remove());
     
-    // Close modal on background click
     modal.addEventListener('click', (e) => {
       if (e.target === modal) {
         modal.remove();

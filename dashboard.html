@@ -8,368 +8,1709 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="style.css">
-    <!--script src="app.js" defer></script-->
+    <style>
+        /* Dashboard Override Styles */
+        :root {
+            --sidebar-width: 280px;
+            --sidebar-collapsed-width: 80px;
+            --topbar-height: 70px;
+        }
+        
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+            background: #f5f7fa;
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: linear-gradient(180deg, #1a6b1a, #228B22);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            transition: width 0.3s ease;
+            position: fixed;
+            height: 100vh;
+            z-index: 1000;
+            box-shadow: 3px 0 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .sidebar.collapsed {
+            width: var(--sidebar-collapsed-width);
+        }
+        
+        .sidebar-header {
+            padding: 1.5rem;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            justify-content: center;
+        }
+        
+        .sidebar-logo img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+        
+        .sidebar-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+        
+        .sidebar.collapsed .sidebar-title {
+            display: none;
+        }
+        
+        /* User Profile */
+        .user-profile {
+            padding: 1.5rem;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .user-avatar {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+        }
+        
+        .user-info {
+            white-space: nowrap;
+            overflow: hidden;
+        }
+        
+        .user-name {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        
+        .user-role {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            display: inline-block;
+        }
+        
+        .sidebar.collapsed .user-info {
+            display: none;
+        }
+        
+        /* Sidebar Menu */
+        .sidebar-menu {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem 0;
+        }
+        
+        .menu-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            position: relative;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+        
+        .menu-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+        
+        .menu-item.active {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            border-left: 4px solid white;
+        }
+        
+        .menu-icon {
+            width: 24px;
+            text-align: center;
+            margin-right: 1rem;
+            font-size: 1.2rem;
+        }
+        
+        .menu-text {
+            flex: 1;
+        }
+        
+        .menu-badge {
+            background: #e67e22;
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            min-width: 20px;
+            text-align: center;
+        }
+        
+        .sidebar.collapsed .menu-text,
+        .sidebar.collapsed .menu-badge {
+            display: none;
+        }
+        
+        .sidebar.collapsed .menu-item {
+            justify-content: center;
+            padding: 1rem;
+        }
+        
+        .sidebar.collapsed .menu-icon {
+            margin-right: 0;
+            font-size: 1.5rem;
+        }
+        
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            transition: margin-left 0.3s ease;
+            min-width: 0;
+        }
+        
+        .sidebar.collapsed + .main-content {
+            margin-left: var(--sidebar-collapsed-width);
+        }
+        
+        /* Topbar */
+        .topbar {
+            height: var(--topbar-height);
+            background: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            padding: 0 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .menu-toggle {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #495057;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .menu-toggle:hover {
+            background: #f8f9fa;
+            color: #228B22;
+        }
+        
+        .page-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #333;
+            margin: 0;
+        }
+        
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            margin-left: auto;
+        }
+        
+        .search-box {
+            position: relative;
+            width: 300px;
+        }
+        
+        .search-box i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+        }
+        
+        .search-box input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 3rem;
+            border: 2px solid #e9ecef;
+            border-radius: 25px;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+        
+        .search-box input:focus {
+            border-color: #228B22;
+            box-shadow: 0 0 0 0.2rem rgba(34, 139, 34, 0.25);
+            outline: none;
+        }
+        
+        .user-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        /* Content Area */
+        .content-wrapper {
+            padding: 2rem;
+        }
+        
+        /* Dashboard Sections */
+        .dashboard-section {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .dashboard-section.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Quick Stats */
+        .quick-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 3px 15px rgba(0, 0, 0, 0.08);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.12);
+        }
+        
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+        }
+        
+        .stat-icon.members { background: linear-gradient(135deg, #228B22, #1a6b1a); }
+        .stat-icon.masul { background: linear-gradient(135deg, #e67e22, #d35400); }
+        .stat-icon.branches { background: linear-gradient(135deg, #3498db, #2980b9); }
+        .stat-icon.zones { background: linear-gradient(135deg, #9b59b6, #8e44ad); }
+        
+        .stat-content {
+            flex: 1;
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #333;
+            display: block;
+            line-height: 1;
+        }
+        
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+        }
+        
+        /* Quick Actions */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .action-btn {
+            background: white;
+            padding: 1.5rem 1rem;
+            border-radius: 12px;
+            box-shadow: 0 3px 15px rgba(0, 0, 0, 0.08);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.12);
+            border-color: #228B22;
+        }
+        
+        .action-btn i {
+            font-size: 2rem;
+            color: #228B22;
+            margin-bottom: 0.75rem;
+        }
+        
+        .action-btn span {
+            display: block;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        /* Charts Grid */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .chart-container {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 3px 15px rgba(0, 0, 0, 0.08);
+        }
+        
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .chart-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #333;
+            margin: 0;
+        }
+        
+        /* Table Container */
+        .table-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 3px 15px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+        
+        .table-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        
+        .table-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #333;
+            margin: 0;
+        }
+        
+        .table-actions {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+        
+        /* Filters */
+        .filters-container {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .filters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            align-items: end;
+        }
+        
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .filter-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 0.5rem;
+        }
+        
+        .filter-control {
+            padding: 0.75rem;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+        
+        .filter-control:focus {
+            border-color: #228B22;
+            box-shadow: 0 0 0 0.2rem rgba(34, 139, 34, 0.25);
+            outline: none;
+        }
+        
+        /* Table */
+        .table-responsive {
+            overflow-x: auto;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .data-table th {
+            background: #f8f9fa;
+            padding: 1rem;
+            font-weight: 600;
+            color: #495057;
+            text-align: left;
+            border-bottom: 2px solid #e9ecef;
+            white-space: nowrap;
+        }
+        
+        .data-table td {
+            padding: 1rem;
+            border-bottom: 1px solid #e9ecef;
+            vertical-align: middle;
+        }
+        
+        .data-table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        /* Member Photo */
+        .member-photo {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #228B22;
+        }
+        
+        .photo-placeholder {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #228B22;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        
+        /* Badges */
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+        
+        .badge-primary { background: #228B22; color: white; }
+        .badge-secondary { background: #6c757d; color: white; }
+        .badge-success { background: #28a745; color: white; }
+        .badge-warning { background: #ffc107; color: #212529; }
+        .badge-danger { background: #dc3545; color: white; }
+        .badge-info { background: #17a2b8; color: white; }
+        
+        /* Level Badges */
+        .badge-bakiyatullah { background: #17a2b8; color: white; }
+        .badge-ansarullah { background: #28a745; color: white; }
+        .badge-ghalibun { background: #ffc107; color: #212529; }
+        .badge-graduate { background: #6c757d; color: white; }
+        
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .btn-action {
+            width: 36px;
+            height: 36px;
+            border: none;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+        
+        .btn-action.view { background: #17a2b8; color: white; }
+        .btn-action.promote { background: #28a745; color: white; }
+        .btn-action.transfer { background: #ffc107; color: #212529; }
+        .btn-action.edit { background: #6c757d; color: white; }
+        .btn-action.delete { background: #dc3545; color: white; }
+        
+        .btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1.5rem;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .page-btn {
+            width: 40px;
+            height: 40px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .page-btn:hover {
+            border-color: #228B22;
+            color: #228B22;
+        }
+        
+        .page-btn.active {
+            background: #228B22;
+            border-color: #228B22;
+            color: white;
+        }
+        
+        .page-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #6c757d;
+        }
+        
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+        
+        /* Activity Feed */
+        .activity-feed {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 3px 15px rgba(0, 0, 0, 0.08);
+            padding: 1.5rem;
+        }
+        
+        .activity-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 1rem 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+        
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+            color: #228B22;
+        }
+        
+        .activity-content {
+            flex: 1;
+        }
+        
+        .activity-text {
+            margin-bottom: 0.25rem;
+        }
+        
+        .activity-time {
+            font-size: 0.875rem;
+            color: #6c757d;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 280px;
+            }
+            
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .topbar {
+                padding: 0 1rem;
+            }
+            
+            .search-box {
+                width: 200px;
+            }
+            
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .content-wrapper {
+                padding: 1rem;
+            }
+            
+            .quick-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .table-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .table-actions {
+                width: 100%;
+                justify-content: flex-start;
+            }
+            
+            .filters-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .action-buttons {
+                flex-wrap: wrap;
+            }
+            
+            .topbar-right {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .quick-stats {
+                grid-template-columns: 1fr;
+            }
+            
+            .quick-actions {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .stat-card {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+                width: 100%;
+            }
+            
+            .btn-action {
+                width: 100%;
+            }
+        }
+        
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            padding: 1rem;
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            max-width: 800px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: modalSlideIn 0.3s ease;
+        }
+        
+        @keyframes modalSlideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 0;
+            color: #333;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #6c757d;
+            cursor: pointer;
+            padding: 0.5rem;
+        }
+        
+        .modal-body {
+            padding: 1.5rem;
+        }
+        
+        .modal-footer {
+            padding: 1.5rem;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+        }
+        
+        /* Form Controls */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .btn i {
+            font-size: 1.1rem;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #228B22, #1a6b1a);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(34, 139, 34, 0.3);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        
+        /* Toast Messages */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 3000;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .toast {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            animation: slideInRight 0.3s ease;
+            max-width: 400px;
+            border-left: 4px solid;
+        }
+        
+        .toast.success {
+            border-left-color: #28a745;
+        }
+        
+        .toast.error {
+            border-left-color: #dc3545;
+        }
+        
+        .toast.warning {
+            border-left-color: #ffc107;
+        }
+        
+        .toast.info {
+            border-left-color: #17a2b8;
+        }
+        
+        .toast-icon {
+            font-size: 1.5rem;
+        }
+        
+        .toast.success .toast-icon {
+            color: #28a745;
+        }
+        
+        .toast.error .toast-icon {
+            color: #dc3545;
+        }
+        
+        .toast-content {
+            flex: 1;
+        }
+        
+        .toast-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        
+        .toast-message {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        
+        .toast-close {
+            background: none;
+            border: none;
+            color: #6c757d;
+            cursor: pointer;
+            padding: 0.5rem;
+            font-size: 1.2rem;
+        }
+        
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOutRight {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+    </style>
 </head>
 <body>
-    <!-- Sidebar -->
-    <div class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <div class="logo">
-                <img src="https://via.placeholder.com/50/228B22/FFFFFF?text=IIM" alt="IIM Logo" class="logo-img">
-                <div class="logo-text">Intizarul Imamul Muntazar</div>
-            </div>
-        </div>
-        
-        <div class="user-profile">
-            <div class="user-avatar">
-                <i class="fas fa-user-shield"></i>
-            </div>
-            <div class="user-name">Administrator</div>
-            <div class="user-role">System Admin</div>
-        </div>
-        
-        <div class="sidebar-menu">
-            <a href="#" class="menu-item active" data-section="overview">
-                <i class="fas fa-tachometer-alt"></i>
-                <span>Dashboard Overview</span>
-            </a>
-            <a href="#" class="menu-item" data-section="members">
-                <i class="fas fa-users"></i>
-                <span>All Members</span>
-                <span class="menu-badge" id="membersCount">0</span>
-            </a>
-            <a href="#" class="menu-item" data-section="masul">
-                <i class="fas fa-user-shield"></i>
-                <span>Mas'ul Leaders</span>
-                <span class="menu-badge" id="masulCount">0</span>
-            </a>
-            <a href="#" class="menu-item" data-section="promotions">
-                <i class="fas fa-chart-line"></i>
-                <span>Promotions</span>
-            </a>
-            <a href="#" class="menu-item" data-section="transfers">
-                <i class="fas fa-exchange-alt"></i>
-                <span>Transfers</span>
-            </a>
-            <a href="#" class="menu-item" data-section="logs">
-                <i class="fas fa-history"></i>
-                <span>System Logs</span>
-            </a>
-            <a href="#" class="menu-item" data-section="settings">
-                <i class="fas fa-cog"></i>
-                <span>Settings</span>
-            </a>
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Modal Overlay -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-content" id="modalContent">
+            <!-- Modal content will be inserted here -->
         </div>
     </div>
 
-    <!-- Main Content -->
-    <div class="main-content">
-        <!-- Topbar -->
-        <div class="topbar">
-            <div class="topbar-left">
-                <button class="menu-toggle" id="menuToggle">
-                    <i class="fas fa-bars"></i>
-                </button>
-                <h1 class="page-title" id="pageTitle">Dashboard Overview</h1>
-            </div>
-            <div class="topbar-right">
-                <div class="topbar-search">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="globalSearch" placeholder="Search members, mas'ul, branches...">
+    <!-- Dashboard Container -->
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <img src="logo.png" alt="IIM Logo">
+                    <div class="sidebar-title">Intizarul Imamul Muntazar</div>
                 </div>
-                <div class="topbar-actions">
-                    <button class="btn btn-accent" onclick="App.logout()">
-                        <i class="fas fa-sign-out-alt"></i> Logout
+            </div>
+
+            <div class="user-profile">
+                <div class="user-avatar">
+                    <i class="fas fa-user-shield"></i>
+                </div>
+                <div class="user-info">
+                    <div class="user-name" id="sidebarUserName">Administrator</div>
+                    <div class="user-role" id="sidebarUserRole">System Admin</div>
+                </div>
+            </div>
+
+            <nav class="sidebar-menu">
+                <a href="#" class="menu-item active" data-section="overview">
+                    <div class="menu-icon"><i class="fas fa-tachometer-alt"></i></div>
+                    <div class="menu-text">Dashboard Overview</div>
+                </a>
+                
+                <a href="#" class="menu-item" data-section="members">
+                    <div class="menu-icon"><i class="fas fa-users"></i></div>
+                    <div class="menu-text">All Members</div>
+                    <div class="menu-badge" id="membersBadge">0</div>
+                </a>
+                
+                <a href="#" class="menu-item" data-section="masul">
+                    <div class="menu-icon"><i class="fas fa-user-shield"></i></div>
+                    <div class="menu-text">Mas'ul Leaders</div>
+                    <div class="menu-badge" id="masulBadge">0</div>
+                </a>
+                
+                <a href="#" class="menu-item" data-section="branches">
+                    <div class="menu-icon"><i class="fas fa-code-branch"></i></div>
+                    <div class="menu-text">Branches</div>
+                    <div class="menu-badge" id="branchesBadge">0</div>
+                </a>
+                
+                <a href="#" class="menu-item" data-section="promotions">
+                    <div class="menu-icon"><i class="fas fa-chart-line"></i></div>
+                    <div class="menu-text">Promotions</div>
+                </a>
+                
+                <a href="#" class="menu-item" data-section="transfers">
+                    <div class="menu-icon"><i class="fas fa-exchange-alt"></i></div>
+                    <div class="menu-text">Transfers</div>
+                </a>
+                
+                <a href="#" class="menu-item" data-section="reports">
+                    <div class="menu-icon"><i class="fas fa-file-alt"></i></div>
+                    <div class="menu-text">Reports</div>
+                </a>
+                
+                <a href="#" class="menu-item" data-section="logs">
+                    <div class="menu-icon"><i class="fas fa-history"></i></div>
+                    <div class="menu-text">Activity Logs</div>
+                </a>
+                
+                <a href="#" class="menu-item" data-section="settings">
+                    <div class="menu-icon"><i class="fas fa-cog"></i></div>
+                    <div class="menu-text">Settings</div>
+                </a>
+                
+                <div class="menu-divider"></div>
+                
+                <a href="register.html" class="menu-item">
+                    <div class="menu-icon"><i class="fas fa-user-plus"></i></div>
+                    <div class="menu-text">Register New</div>
+                </a>
+                
+                <a href="#" class="menu-item" onclick="App.logout()">
+                    <div class="menu-icon"><i class="fas fa-sign-out-alt"></i></div>
+                    <div class="menu-text">Logout</div>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Topbar -->
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="menu-toggle" onclick="App.toggleSidebar()">
+                        <i class="fas fa-bars"></i>
                     </button>
+                    <h1 class="page-title" id="pageTitle">Dashboard Overview</h1>
                 </div>
-            </div>
-        </div>
-
-        <!-- Content Area -->
-        <div class="content">
-            <!-- Overview Section -->
-            <div class="dashboard-section active" id="overviewSection">
-                <div class="stats-grid" id="statsGrid">
-                    <!-- Loaded by JS -->
-                </div>
-
-                <div class="quick-actions">
-                    <div class="action-btn" onclick="App.switchSection('members')">
-                        <i class="fas fa-users"></i>
-                        <span>View Members</span>
+                
+                <div class="topbar-right">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="globalSearch" placeholder="Search members, mas'ul, branches...">
                     </div>
-                    <div class="action-btn" onclick="App.switchSection('masul')">
-                        <i class="fas fa-user-shield"></i>
-                        <span>View Mas'ul</span>
-                    </div>
-                    <div class="action-btn" onclick="App.exportData('all')">
-                        <i class="fas fa-download"></i>
-                        <span>Export Data</span>
-                    </div>
-                    <div class="action-btn" onclick="App.switchSection('settings')">
-                        <i class="fas fa-cog"></i>
-                        <span>System Settings</span>
-                    </div>
-                </div>
-
-                <div class="charts-container">
-                    <div class="chart-card">
-                        <h3><i class="fas fa-chart-pie"></i> Members per Zone</h3>
-                        <canvas id="zoneChart"></canvas>
-                    </div>
-                    <div class="chart-card">
-                        <h3><i class="fas fa-chart-bar"></i> Members per Level</h3>
-                        <canvas id="levelChart"></canvas>
-                    </div>
-                </div>
-
-                <div class="recent-activity">
-                    <h3><i class="fas fa-history"></i> Recent Activity</h3>
-                    <div class="activity-list" id="recentActivity">
-                        <!-- Loaded by JS -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- Members Section -->
-            <div class="dashboard-section" id="membersSection">
-                <div class="filters">
-                    <div class="filter-group">
-                        <label>Search</label>
-                        <input type="text" id="memberSearch" placeholder="Search by name, ID, or phone">
-                    </div>
-                    <div class="filter-group">
-                        <label>Zone</label>
-                        <select id="zoneFilter">
-                            <option value="">All Zones</option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <label>Branch</label>
-                        <select id="branchFilter">
-                            <option value="">All Branches</option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <label>Level</label>
-                        <select id="levelFilter">
-                            <option value="">All Levels</option>
-                            <option value="Bakiyatullah">Bakiyatullah</option>
-                            <option value="Ansarullah">Ansarullah</option>
-                            <option value="Ghalibun">Ghalibun</option>
-                            <option value="Graduate">Graduate</option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <label>Gender</label>
-                        <select id="genderFilter">
-                            <option value="">All Genders</option>
-                            <option value="Brother">Brother</option>
-                            <option value="Sister">Sister</option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <button class="btn btn-primary" id="applyFilters">
-                            <i class="fas fa-filter"></i> Apply Filters
+                    
+                    <div class="user-actions">
+                        <button class="btn btn-primary" onclick="App.showQuickActions()">
+                            <i class="fas fa-bolt"></i> Quick Actions
                         </button>
-                        <button class="btn btn-secondary" onclick="App.exportData('members')">
+                        <button class="btn btn-secondary" onclick="App.exportDashboard()">
                             <i class="fas fa-download"></i> Export
                         </button>
                     </div>
                 </div>
+            </header>
 
-                <div class="table-container">
-                    <div class="table-header">
-                        <h3>All Members</h3>
-                        <div class="table-actions">
-                            <button class="btn btn-primary" id="viewSelected">
-                                <i class="fas fa-eye"></i> View Selected
-                            </button>
-                            <button class="btn btn-accent" id="promoteSelected">
-                                <i class="fas fa-arrow-up"></i> Promote Selected
-                            </button>
+            <!-- Content Wrapper -->
+            <div class="content-wrapper">
+                <!-- Overview Section -->
+                <section class="dashboard-section active" id="overviewSection">
+                    <div class="quick-stats" id="statsGrid">
+                        <!-- Stats will be loaded here -->
+                    </div>
+
+                    <div class="quick-actions">
+                        <div class="action-btn" onclick="App.switchSection('members')">
+                            <i class="fas fa-users"></i>
+                            <span>View All Members</span>
+                        </div>
+                        <div class="action-btn" onclick="App.switchSection('masul')">
+                            <i class="fas fa-user-shield"></i>
+                            <span>View Mas'ul</span>
+                        </div>
+                        <div class="action-btn" onclick="App.switchSection('branches')">
+                            <i class="fas fa-code-branch"></i>
+                            <span>View Branches</span>
+                        </div>
+                        <div class="action-btn" onclick="App.showRegisterModal()">
+                            <i class="fas fa-user-plus"></i>
+                            <span>Register New</span>
                         </div>
                     </div>
-                    <div class="table-responsive">
-                        <table id="membersTable">
-                            <thead>
-                                <tr>
-                                    <th><input type="checkbox" id="selectAllMembers"></th>
-                                    <th>Photo</th>
-                                    <th>Global ID</th>
-                                    <th>Recruitment ID</th>
-                                    <th>Full Name</th>
-                                    <th>Gender</th>
-                                    <th>Phone</th>
-                                    <th>Branch</th>
-                                    <th>Level</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="membersTableBody">
-                                <!-- Loaded by JS -->
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="pagination" id="membersPagination">
-                        <!-- Loaded by JS -->
-                    </div>
-                </div>
-            </div>
 
-            <!-- Mas'ul Section -->
-            <div class="dashboard-section" id="masulSection">
-                <div class="table-container">
-                    <div class="table-header">
-                        <h3>Mas'ul Leaders</h3>
-                        <div class="table-actions">
-                            <button class="btn btn-primary" onclick="App.showRegisterMasulModal()">
-                                <i class="fas fa-user-plus"></i> Add Mas'ul
-                            </button>
-                            <button class="btn btn-secondary" onclick="App.exportData('masul')">
-                                <i class="fas fa-download"></i> Export
-                            </button>
+                    <div class="charts-grid">
+                        <div class="chart-container">
+                            <div class="chart-header">
+                                <h3 class="chart-title">Members by Branch</h3>
+                                <select class="filter-control" style="width: auto;" onchange="App.updateBranchChart()">
+                                    <option value="count">By Count</option>
+                                    <option value="percentage">By Percentage</option>
+                                </select>
+                            </div>
+                            <canvas id="branchChart"></canvas>
+                        </div>
+                        
+                        <div class="chart-container">
+                            <div class="chart-header">
+                                <h3 class="chart-title">Members by Level</h3>
+                                <select class="filter-control" style="width: auto;" onchange="App.updateLevelChart()">
+                                    <option value="bar">Bar Chart</option>
+                                    <option value="pie">Pie Chart</option>
+                                </select>
+                            </div>
+                            <canvas id="levelChart"></canvas>
                         </div>
                     </div>
-                    <div class="table-responsive">
-                        <table id="masulTable">
-                            <thead>
-                                <tr>
-                                    <th>Photo</th>
-                                    <th>Global ID</th>
-                                    <th>Recruitment ID</th>
-                                    <th>Full Name</th>
-                                    <th>Email</th>
-                                    <th>Phone</th>
-                                    <th>Branch</th>
-                                    <th>Year</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="masulTableBody">
-                                <!-- Loaded by JS -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
 
-            <!-- Promotions Section -->
-            <div class="dashboard-section" id="promotionsSection">
-                <div class="table-container">
-                    <h3>Promotion Logs</h3>
-                    <div class="table-responsive">
-                        <table id="promotionsTable">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Member ID</th>
-                                    <th>Old Level</th>
-                                    <th>New Level</th>
-                                    <th>Admin</th>
-                                    <th>Notes</th>
-                                </tr>
-                            </thead>
-                            <tbody id="promotionsTableBody">
-                                <!-- Loaded by JS -->
-                            </tbody>
-                        </table>
+                    <div class="activity-feed">
+                        <h3>Recent Activity</h3>
+                        <div id="recentActivity">
+                            <!-- Activity will be loaded here -->
+                        </div>
                     </div>
-                </div>
-            </div>
+                </section>
 
-            <!-- Transfers Section -->
-            <div class="dashboard-section" id="transfersSection">
-                <div class="table-container">
-                    <h3>Transfer Logs</h3>
-                    <div class="table-responsive">
-                        <table id="transfersTable">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Member ID</th>
-                                    <th>From Branch</th>
-                                    <th>To Branch</th>
-                                    <th>Admin</th>
-                                    <th>Notes</th>
-                                </tr>
-                            </thead>
-                            <tbody id="transfersTableBody">
-                                <!-- Loaded by JS -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+                <!-- Members Section -->
+                <section class="dashboard-section" id="membersSection">
+                    <div class="table-container">
+                        <div class="table-header">
+                            <h2 class="table-title">All Members</h2>
+                            <div class="table-actions">
+                                <button class="btn btn-primary" onclick="App.showRegisterModal('member')">
+                                    <i class="fas fa-user-plus"></i> Add Member
+                                </button>
+                                <button class="btn btn-secondary" onclick="App.exportData('members')">
+                                    <i class="fas fa-download"></i> Export
+                                </button>
+                                <button class="btn btn-secondary" onclick="App.printMembersTable()">
+                                    <i class="fas fa-print"></i> Print
+                                </button>
+                            </div>
+                        </div>
 
-            <!-- Logs Section -->
-            <div class="dashboard-section" id="logsSection">
-                <div class="table-container">
-                    <h3>System Activity Logs</h3>
-                    <div class="table-responsive">
-                        <table id="logsTable">
-                            <thead>
-                                <tr>
-                                    <th>Timestamp</th>
-                                    <th>Action</th>
-                                    <th>Description</th>
-                                    <th>User Role</th>
-                                    <th>User Branch</th>
-                                </tr>
-                            </thead>
-                            <tbody id="logsTableBody">
-                                <!-- Loaded by JS -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+                        <div class="filters-container">
+                            <div class="filters-grid">
+                                <div class="filter-group">
+                                    <label class="filter-label">Search</label>
+                                    <input type="text" class="filter-control" id="memberSearch" 
+                                           placeholder="Search by name, ID, or phone">
+                                </div>
+                                
+                                <div class="filter-group">
+                                    <label class="filter-label">Zone</label>
+                                    <select class="filter-control" id="zoneFilter">
+                                        <option value="">All Zones</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="filter-group">
+                                    <label class="filter-label">Branch</label>
+                                    <select class="filter-control" id="branchFilter">
+                                        <option value="">All Branches</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="filter-group">
+                                    <label class="filter-label">Level</label>
+                                    <select class="filter-control" id="levelFilter">
+                                        <option value="">All Levels</option>
+                                        <option value="Bakiyatullah">Bakiyatullah</option>
+                                        <option value="Ansarullah">Ansarullah</option>
+                                        <option value="Ghalibun">Ghalibun</option>
+                                        <option value="Graduate">Graduate</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="filter-group">
+                                    <label class="filter-label">Gender</label>
+                                    <select class="filter-control" id="genderFilter">
+                                        <option value="">All Genders</option>
+                                        <option value="Brother">Brother</option>
+                                        <option value="Sister">Sister</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="filter-group">
+                                    <label class="filter-label">Status</label>
+                                    <select class="filter-control" id="statusFilter">
+                                        <option value="">All Status</option>
+                                        <option value="Active">Active</option>
+                                        <option value="Inactive">Inactive</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="filter-group">
+                                    <button class="btn btn-primary" onclick="App.loadMembers()">
+                                        <i class="fas fa-filter"></i> Apply Filters
+                                    </button>
+                                    <button class="btn btn-secondary" onclick="App.resetFilters()">
+                                        <i class="fas fa-redo"></i> Reset
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
 
-            <!-- Settings Section -->
-            <div class="dashboard-section" id="settingsSection">
-                <div class="card">
-                    <div class="card-header">
-                        <h3><i class="fas fa-cog"></i> System Settings</h3>
+                        <div class="table-responsive">
+                            <table class="data-table" id="membersTable">
+                                <thead>
+                                    <tr>
+                                        <th width="50">
+                                            <input type="checkbox" id="selectAllMembers">
+                                        </th>
+                                        <th width="80">Photo</th>
+                                        <th>Global ID</th>
+                                        <th>Recruitment ID</th>
+                                        <th>Full Name</th>
+                                        <th>Gender</th>
+                                        <th>Phone</th>
+                                        <th>Branch</th>
+                                        <th>Level</th>
+                                        <th>Status</th>
+                                        <th width="200">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="membersTableBody">
+                                    <!-- Members will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="pagination" id="membersPagination">
+                            <!-- Pagination will be loaded here -->
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <form id="settingsForm">
+                </section>
+
+                <!-- Mas'ul Section -->
+                <section class="dashboard-section" id="masulSection">
+                    <div class="table-container">
+                        <div class="table-header">
+                            <h2 class="table-title">Mas'ul Leaders</h2>
+                            <div class="table-actions">
+                                <button class="btn btn-primary" onclick="App.showRegisterModal('masul')">
+                                    <i class="fas fa-user-shield"></i> Add Mas'ul
+                                </button>
+                                <button class="btn btn-secondary" onclick="App.exportData('masul')">
+                                    <i class="fas fa-download"></i> Export
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="filters-container">
+                            <div class="filters-grid">
+                                <div class="filter-group">
+                                    <label class="filter-label">Search</label>
+                                    <input type="text" class="filter-control" id="masulSearch" 
+                                           placeholder="Search by name, email, or phone">
+                                </div>
+                                
+                                <div class="filter-group">
+                                    <label class="filter-label">Zone</label>
+                                    <select class="filter-control" id="masulZoneFilter">
+                                        <option value="">All Zones</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="filter-group">
+                                    <label class="filter-label">Branch</label>
+                                    <select class="filter-control" id="masulBranchFilter">
+                                        <option value="">All Branches</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="filter-group">
+                                    <button class="btn btn-primary" onclick="App.loadMasul()">
+                                        <i class="fas fa-filter"></i> Apply Filters
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="data-table" id="masulTable">
+                                <thead>
+                                    <tr>
+                                        <th width="80">Photo</th>
+                                        <th>Global ID</th>
+                                        <th>Recruitment ID</th>
+                                        <th>Full Name</th>
+                                        <th>Email</th>
+                                        <th>Phone</th>
+                                        <th>Branch</th>
+                                        <th>Zone</th>
+                                        <th>Year</th>
+                                        <th width="150">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="masulTableBody">
+                                    <!-- Mas'ul will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Branches Section -->
+                <section class="dashboard-section" id="branchesSection">
+                    <div class="table-container">
+                        <div class="table-header">
+                            <h2 class="table-title">Branches Overview</h2>
+                            <div class="table-actions">
+                                <button class="btn btn-primary" onclick="App.exportData('branches')">
+                                    <i class="fas fa-download"></i> Export
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="data-table" id="branchesTable">
+                                <thead>
+                                    <tr>
+                                        <th>Zone</th>
+                                        <th>Branch</th>
+                                        <th>Total Members</th>
+                                        <th>Brothers</th>
+                                        <th>Sisters</th>
+                                        <th>Mas'ul Count</th>
+                                        <th>Last Registration</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="branchesTableBody">
+                                    <!-- Branches will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Promotions Section -->
+                <section class="dashboard-section" id="promotionsSection">
+                    <div class="table-container">
+                        <div class="table-header">
+                            <h2 class="table-title">Promotion History</h2>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="data-table" id="promotionsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Member ID</th>
+                                        <th>Member Name</th>
+                                        <th>Old Level</th>
+                                        <th>New Level</th>
+                                        <th>Promoted By</th>
+                                        <th>Notes</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="promotionsTableBody">
+                                    <!-- Promotions will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Transfers Section -->
+                <section class="dashboard-section" id="transfersSection">
+                    <div class="table-container">
+                        <div class="table-header">
+                            <h2 class="table-title">Transfer History</h2>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="data-table" id="transfersTable">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Member ID</th>
+                                        <th>Member Name</th>
+                                        <th>From Branch</th>
+                                        <th>To Branch</th>
+                                        <th>Transferred By</th>
+                                        <th>Notes</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="transfersTableBody">
+                                    <!-- Transfers will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Reports Section -->
+                <section class="dashboard-section" id="reportsSection">
+                    <div class="quick-stats">
+                        <div class="stat-card">
+                            <div class="stat-icon members">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="stat-content">
+                                <span class="stat-number" id="totalMembersReport">0</span>
+                                <span class="stat-label">Total Members</span>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon masul">
+                                <i class="fas fa-user-shield"></i>
+                            </div>
+                            <div class="stat-content">
+                                <span class="stat-number" id="totalMasulReport">0</span>
+                                <span class="stat-label">Total Mas'ul</span>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon branches">
+                                <i class="fas fa-code-branch"></i>
+                            </div>
+                            <div class="stat-content">
+                                <span class="stat-number" id="totalBranchesReport">0</span>
+                                <span class="stat-label">Active Branches</span>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-icon zones">
+                                <i class="fas fa-globe"></i>
+                            </div>
+                            <div class="stat-content">
+                                <span class="stat-number" id="totalZonesReport">0</span>
+                                <span class="stat-label">Zones</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="charts-grid">
+                        <div class="chart-container">
+                            <h3 class="chart-title">Monthly Registrations</h3>
+                            <canvas id="monthlyRegistrationsChart"></canvas>
+                        </div>
+                        
+                        <div class="chart-container">
+                            <h3 class="chart-title">Gender Distribution</h3>
+                            <canvas id="genderChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="table-container" style="margin-top: 2rem;">
+                        <div class="table-header">
+                            <h3 class="table-title">Generate Reports</h3>
+                        </div>
+                        
+                        <div class="modal-body">
+                            <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
+                                <div class="form-group">
+                                    <label>Report Type</label>
+                                    <select class="filter-control" id="reportType">
+                                        <option value="members">Members Report</option>
+                                        <option value="masul">Mas'ul Report</option>
+                                        <option value="branches">Branches Report</option>
+                                        <option value="promotions">Promotions Report</option>
+                                        <option value="transfers">Transfers Report</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label>Date From</label>
+                                    <input type="date" class="filter-control" id="reportDateFrom">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label>Date To</label>
+                                    <input type="date" class="filter-control" id="reportDateTo">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label>Format</label>
+                                    <select class="filter-control" id="reportFormat">
+                                        <option value="csv">CSV</option>
+                                        <option value="excel">Excel</option>
+                                        <option value="pdf">PDF</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div style="text-align: center; margin-top: 2rem;">
+                                <button class="btn btn-primary" onclick="App.generateReport()">
+                                    <i class="fas fa-file-download"></i> Generate Report
+                                </button>
+                                <button class="btn btn-secondary" onclick="App.previewReport()">
+                                    <i class="fas fa-eye"></i> Preview
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Logs Section -->
+                <section class="dashboard-section" id="logsSection">
+                    <div class="table-container">
+                        <div class="table-header">
+                            <h2 class="table-title">Activity Logs</h2>
+                            <div class="table-actions">
+                                <button class="btn btn-secondary" onclick="App.clearLogs()">
+                                    <i class="fas fa-trash"></i> Clear Old Logs
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="filters-container">
+                            <div class="filters-grid">
+                                <div class="filter-group">
+                                    <label class="filter-label">Date From</label>
+                                    <input type="date" class="filter-control" id="logDateFrom">
+                                </div>
+                                
+                                <div class="filter-group">
+                                    <label class="filter-label">Date To</label>
+                                    <input type="date" class="filter-control" id="logDateTo">
+                                </div>
+                                
+                                <div class="filter-group">
+                                    <label class="filter-label">Action Type</label>
+                                    <select class="filter-control" id="logActionType">
+                                        <option value="">All Actions</option>
+                                        <option value="registration">Registration</option>
+                                        <option value="promotion">Promotion</option>
+                                        <option value="transfer">Transfer</option>
+                                        <option value="login">Login</option>
+                                        <option value="logout">Logout</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="filter-group">
+                                    <label class="filter-label">User Role</label>
+                                    <select class="filter-control" id="logUserRole">
+                                        <option value="">All Roles</option>
+                                        <option value="admin">Admin</option>
+                                        <option value="masul">Mas'ul</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="filter-group">
+                                    <button class="btn btn-primary" onclick="App.loadLogs()">
+                                        <i class="fas fa-filter"></i> Apply Filters
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="data-table" id="logsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Timestamp</th>
+                                        <th>Action</th>
+                                        <th>Description</th>
+                                        <th>User Role</th>
+                                        <th>User Branch</th>
+                                        <th>IP Address</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="logsTableBody">
+                                    <!-- Logs will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="pagination" id="logsPagination">
+                            <!-- Pagination will be loaded here -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Settings Section -->
+                <section class="dashboard-section" id="settingsSection">
+                    <div class="table-container">
+                        <div class="table-header">
+                            <h2 class="table-title">System Settings</h2>
+                        </div>
+
+                        <div class="modal-body">
                             <div class="form-grid">
                                 <div class="form-group">
-                                    <label for="adminAccessCode">Admin Access Code <span class="required">*</span></label>
-                                    <input type="password" id="adminAccessCode" class="form-control" required>
+                                    <label>Admin Access Code</label>
+                                    <input type="password" class="filter-control" id="adminAccessCode" 
+                                           placeholder="Enter new admin access code">
                                 </div>
+                                
                                 <div class="form-group">
-                                    <label for="masulAccessCode">Mas'ul Access Code <span class="required">*</span></label>
-                                    <input type="password" id="masulAccessCode" class="form-control" required>
+                                    <label>Mas'ul Access Code</label>
+                                    <input type="password" class="filter-control" id="masulAccessCode" 
+                                           placeholder="Enter new mas'ul access code">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label>Session Timeout (minutes)</label>
+                                    <input type="number" class="filter-control" id="sessionTimeout" 
+                                           value="30" min="5" max="240">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label>Max Photo Size (MB)</label>
+                                    <input type="number" class="filter-control" id="maxPhotoSize" 
+                                           value="2" min="1" max="10">
+                                </div>
+                                
+                                <div class="form-group full-width">
+                                    <label>System Maintenance Message</label>
+                                    <textarea class="filter-control" id="maintenanceMessage" 
+                                              rows="3" placeholder="Enter maintenance message"></textarea>
+                                </div>
+                                
+                                <div class="form-group full-width">
+                                    <div class="form-check">
+                                        <input type="checkbox" class="filter-control" id="enableEmailNotifications">
+                                        <label>Enable Email Notifications</label>
+                                    </div>
+                                    
+                                    <div class="form-check">
+                                        <input type="checkbox" class="filter-control" id="enableAutoBackup">
+                                        <label>Enable Auto Backup (Daily)</label>
+                                    </div>
+                                    
+                                    <div class="form-check">
+                                        <input type="checkbox" class="filter-control" id="enableActivityLogging">
+                                        <label>Enable Activity Logging</label>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="form-actions">
-                                <button type="submit" class="btn btn-primary">
+                            
+                            <div class="form-navigation" style="margin-top: 2rem;">
+                                <button class="btn btn-primary" onclick="App.saveSettings()">
                                     <i class="fas fa-save"></i> Save Settings
                                 </button>
-                                <button type="button" class="btn btn-secondary" onclick="App.backupSystem()">
+                                <button class="btn btn-secondary" onclick="App.backupSystem()">
                                     <i class="fas fa-database"></i> Backup System
                                 </button>
+                                <button class="btn btn-danger" onclick="App.resetSystem()">
+                                    <i class="fas fa-redo"></i> Reset System
+                                </button>
                             </div>
-                        </form>
+                        </div>
                     </div>
-                </div>
+                </section>
             </div>
-        </div>
+        </main>
     </div>
 
     <script src="app.js"></script>
-    
-    <!-- Optional: Add initialization script -->
     <script>
-        // Wait for DOM and app.js to load
-        if (typeof App !== 'undefined') {
-            document.addEventListener('DOMContentLoaded', function() {
-                App.init();
-            });
-        } else {
-            console.error('App.js not loaded properly');
-        }
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            App.initDashboard();
+        });
     </script>
 </body>
 </html>

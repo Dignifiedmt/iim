@@ -1,1963 +1,2641 @@
-// app.js - COMPLETE FIXED FRONTEND FOR INTIZARUL IMAMUL MUNTAZAR
-// VERSION: 4.2.0 - FIXED AND ENHANCED
+// app.js - COMPLETE FRONTEND APPLICATION FOR INTIZARUL IMAMUL MUNTAZAR
+// VERSION: 5.0.0 - COMPLETE REWRITE WITH STATE MANAGEMENT
 
-const CONFIG = {
-  API_URL: localStorage.getItem('iim_api_url') || 'https://script.google.com/macros/s/AKfycbweAMLu87vyBN-2mpW7nx5aPtsFJqObtAQm8opAaWRRycJW1tC8IqofToulRZc2JDkI/exec',
-  MAX_PHOTO_SIZE: 2 * 1024 * 1024,
-  SESSION_TIMEOUT: 30 * 60 * 1000,
-  REQUEST_TIMEOUT: 30000
+/**
+ * 🚀 APPLICATION CONFIGURATION
+ */
+const AppConfig = {
+    // API Configuration
+    API_URL: localStorage.getItem('iim_api_url') || 'https://script.google.com/macros/s/AKfycbweAMLu87vyBN-2mpW7nx5aPtsFJqObtAQm8opAaWRRycJW1tC8IqofToulRZc2JDkI/exec',
+    
+    // System Settings
+    SYSTEM_NAME: 'Intizarul Imamul Muntazar',
+    VERSION: '5.0.0',
+    
+    // Validation Rules
+    MIN_AGE: 8, // Minimum age requirement
+    MAX_AGE: 100, // Maximum age
+    MAX_PHOTO_SIZE: 2 * 1024 * 1024, // 2MB
+    ALLOWED_IMAGE_TYPES: ['image/jpeg', 'image/png', 'image/jpg'],
+    
+    // Session Management
+    SESSION_TIMEOUT: 30 * 60 * 1000, // 30 minutes
+    REQUEST_TIMEOUT: 30000, // 30 seconds
+    
+    // UI Settings
+    ITEMS_PER_PAGE: 20,
+    DEBOUNCE_DELAY: 300,
+    
+    // Default Access Codes
+    DEFAULT_ACCESS_CODES: {
+        admin: 'Muntazirun',
+        masul: 'Muntazir'
+    }
 };
 
-const ZONES = {
-  'SOKOTO': ['Sokoto', 'Mafara', 'Yaure', 'Illela', 'Zuru', 'Yabo'],
-  'KADUNA': ['Kaduna', 'Jaji', 'Mjos'],
-  'ABUJA': ['Maraba', 'Lafia', 'Keffi/Doma', 'Minna', 'Suleja'],
-  'ZARIA': ['Zaria', 'Danja', 'Dutsen Wai', 'Kudan', 'Soba'],
-  'KANO': ['Kano', 'Kazaure', 'Potiskum', 'Gashuwa'],
-  'BAUCHI': ['Bauchi', 'Gombe', 'Azare', 'Jos'],
-  'MALUMFASHI': ['Malumfashi', 'Bakori', 'Katsina'],
-  'NIGER': ['Niyame', 'Maradi'],
-  'QUM': ['Qum']
+/**
+ * 📊 APPLICATION STATE MANAGEMENT
+ */
+const AppState = {
+    // User Session
+    user: {
+        isLoggedIn: false,
+        role: null,
+        branch: null,
+        name: null,
+        loginTime: null
+    },
+    
+    // Registration Form State
+    registration: {
+        currentStep: 1,
+        totalSteps: 4,
+        formData: {},
+        photoBase64: null,
+        isMasulMode: false
+    },
+    
+    // Dashboard State
+    dashboard: {
+        currentSection: 'overview',
+        filters: {},
+        pagination: {
+            currentPage: 1,
+            totalPages: 1,
+            totalItems: 0
+        },
+        charts: {},
+        searchQuery: ''
+    },
+    
+    // API Cache
+    cache: {
+        members: [],
+        masul: [],
+        statistics: null,
+        zones: null,
+        lastUpdated: null
+    },
+    
+    // UI State
+    ui: {
+        isLoading: false,
+        toastQueue: [],
+        modals: {}
+    }
 };
 
-const LEVELS = ['Bakiyatullah', 'Ansarullah', 'Ghalibun', 'Graduate'];
+/**
+ * 🌐 ZONES AND BRANCHES DATA
+ */
+const ZonesData = {
+    'SOKOTO': ['Sokoto', 'Mafara', 'Yaure', 'Illela', 'Zuru', 'Yabo'],
+    'KADUNA': ['Kaduna', 'Jaji', 'Mjos'],
+    'ABUJA': ['Maraba', 'Lafia', 'Keffi/Doma', 'Minna', 'Suleja'],
+    'ZARIA': ['Zaria', 'Danja', 'Dutsen Wai', 'Kudan', 'Soba'],
+    'KANO': ['Kano', 'Kazaure', 'Potiskum', 'Gashuwa'],
+    'BAUCHI': ['Bauchi', 'Gombe', 'Azare', 'Jos'],
+    'MALUMFASHI': ['Malumfashi', 'Bakori', 'Katsina'],
+    'NIGER': ['Niyame', 'Maradi'],
+    'QUM': ['Qum']
+};
 
-class App {
-  static async init() {
-    console.log('🚀 App initializing...');
-    
-    // Setup API URL
-    await this.setupApiUrl();
-    
-    this.setupErrorHandling();
-    this.validateSession();
-    this.setupGlobalEvents();
-    this.loadCurrentPage();
-    
-    console.log('✅ App initialized successfully');
-  }
+/**
+ * 🎓 MEMBER LEVELS
+ */
+const MemberLevels = [
+    { value: 'Bakiyatullah', label: 'Bakiyatullah', order: 1 },
+    { value: 'Ansarullah', label: 'Ansarullah', order: 2 },
+    { value: 'Ghalibun', label: 'Ghalibun', order: 3 },
+    { value: 'Graduate', label: 'Graduate', order: 4 }
+];
 
-  static async setupApiUrl() {
-    const savedUrl = localStorage.getItem('iim_api_url');
+/**
+ * 🚀 APPLICATION CLASS
+ */
+class Application {
+    /**
+     * ========================
+     * INITIALIZATION
+     * ========================
+     */
     
-    if (savedUrl && savedUrl !== 'undefined') {
-      CONFIG.API_URL = savedUrl;
-      console.log('🌐 Using saved API URL:', savedUrl);
-      return;
-    }
-    
-    if (CONFIG.API_URL && !CONFIG.API_URL.includes('YOUR_NEW_GAS_WEB_APP_URL')) {
-      localStorage.setItem('iim_api_url', CONFIG.API_URL);
-      return;
-    }
-    
-    await this.showApiConfigModal();
-  }
-
-  static async showApiConfigModal() {
-    return new Promise((resolve) => {
-      const modal = document.createElement('div');
-      modal.className = 'config-modal';
-      
-      const defaultUrl = 'https://script.google.com/macros/s/AKfycbweAMLu87vyBN-2mpW7nx5aPtsFJqObtAQm8opAaWRRycJW1tC8IqofToulRZc2JDkI/exec';
-      
-      modal.innerHTML = `
-        <div class="config-modal-content">
-          <h2><i class="fas fa-cogs"></i> Backend Configuration</h2>
-          <p>Please enter your Google Apps Script Web App URL. This is required for the system to work.</p>
-          
-          <div class="form-group">
-            <label>Backend URL:</label>
-            <input type="text" id="apiUrlInput" value="${defaultUrl}" placeholder="https://script.google.com/macros/s/.../exec">
-          </div>
-          
-          <div class="info-box">
-            <strong>How to get this URL:</strong>
-            <ol>
-              <li>Deploy your Google Script as Web App</li>
-              <li>Select "Execute as: Me" and "Who has access: Anyone"</li>
-              <li>Copy the provided URL</li>
-              <li>Paste it above</li>
-            </ol>
-          </div>
-          
-          <div class="config-modal-buttons">
-            <button id="testConnectionBtn" class="config-modal-test">
-              <i class="fas fa-plug"></i> Test Connection
-            </button>
-            <button id="saveUrlBtn" class="config-modal-save">
-              <i class="fas fa-save"></i> Save & Continue
-            </button>
-          </div>
-          
-          <div id="testResult" style="display: none;"></div>
-        </div>
-      `;
-      
-      document.body.appendChild(modal);
-      
-      document.getElementById('testConnectionBtn').addEventListener('click', async () => {
-        const url = document.getElementById('apiUrlInput').value.trim();
-        if (!url) {
-          this.error('Please enter a URL');
-          return;
-        }
-        
-        const resultDiv = document.getElementById('testResult');
-        resultDiv.style.display = 'block';
-        resultDiv.innerHTML = '<div class="config-test-info"><i class="fas fa-sync fa-spin"></i> Testing connection...</div>';
+    static async init() {
+        console.log('🚀 Application initializing...');
         
         try {
-          const response = await fetch(url, { method: 'GET' });
-          if (response.ok) {
-            const data = await response.json();
-            if (data.success) {
-              resultDiv.innerHTML = `
-                <div class="config-test-success">
-                  <i class="fas fa-check-circle"></i> Connection successful!
-                  <div>System: ${data.system}, Version: ${data.version}</div>
-                </div>
-              `;
-            } else {
-              resultDiv.innerHTML = `
-                <div class="config-test-error">
-                  <i class="fas fa-exclamation-triangle"></i> Backend error: ${data.message}
-                </div>
-              `;
+            // Load user session
+            this.loadUserSession();
+            
+            // Initialize based on current page
+            const page = window.location.pathname.split('/').pop();
+            
+            switch(page) {
+                case 'login.html':
+                    await this.initLoginPage();
+                    break;
+                case 'register.html':
+                    await this.initRegistrationPage();
+                    break;
+                case 'dashboard.html':
+                    await this.initDashboard();
+                    break;
+                case 'index.html':
+                    await this.initLandingPage();
+                    break;
+                default:
+                    await this.initLandingPage();
             }
-          } else {
-            resultDiv.innerHTML = `
-              <div class="config-test-error">
-                <i class="fas fa-times-circle"></i> HTTP ${response.status}: ${response.statusText}
-              </div>
-            `;
-          }
+            
+            // Setup global event listeners
+            this.setupGlobalEvents();
+            
+            console.log('✅ Application initialized successfully');
         } catch (error) {
-          resultDiv.innerHTML = `
-            <div class="config-test-error">
-              <i class="fas fa-unlink"></i> Connection failed: ${error.message}
-            </div>
-          `;
+            console.error('❌ Application initialization failed:', error);
+            this.showError('Failed to initialize application');
         }
-      });
-      
-      document.getElementById('saveUrlBtn').addEventListener('click', () => {
-        const url = document.getElementById('apiUrlInput').value.trim();
-        if (!url) {
-          this.error('Please enter a URL');
-          return;
-        }
+    }
+    
+    /**
+     * ========================
+     * USER SESSION MANAGEMENT
+     * ========================
+     */
+    
+    static loadUserSession() {
+        const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+        const loginTime = localStorage.getItem('loginTime');
         
-        CONFIG.API_URL = url;
-        localStorage.setItem('iim_api_url', url);
-        modal.remove();
-        resolve();
-      });
-    });
-  }
-
-  static setupErrorHandling() {
-    window.addEventListener('error', (e) => {
-      console.error('Global error:', e.error);
-      this.error(`Application error: ${e.message}`);
-    });
-
-    window.addEventListener('unhandledrejection', (e) => {
-      console.error('Unhandled promise rejection:', e.reason);
-      this.error(`Operation failed: ${e.reason.message || e.reason}`);
-    });
-
-    window.addEventListener('offline', () => {
-      this.error('You are offline. Some features may not work.');
-    });
-  }
-
-  static validateSession() {
-    const loggedIn = localStorage.getItem('isLoggedIn') === 'true';
-    const loginTime = localStorage.getItem('loginTime');
-    const page = location.pathname.split('/').pop();
-
-    if (loggedIn && loginTime) {
-      const sessionAge = Date.now() - new Date(loginTime).getTime();
-      if (sessionAge > CONFIG.SESSION_TIMEOUT) {
-        this.showSessionWarning();
-        return;
-      }
-    }
-
-    const role = localStorage.getItem('userRole');
-    
-    if (['dashboard.html', 'register.html'].includes(page) && !loggedIn) {
-      location.href = 'login.html';
-      return;
-    }
-    
-    if (page === 'dashboard.html' && role !== 'admin') {
-      location.href = 'login.html?role=admin';
-      return;
-    }
-    
-    if (page === 'register.html' && !['masul', 'admin'].includes(role)) {
-      location.href = 'login.html?role=masul';
-      return;
-    }
-  }
-
-  static showSessionWarning() {
-    const warning = document.createElement('div');
-    warning.className = 'session-warning';
-    warning.innerHTML = `
-      <i class="fas fa-exclamation-triangle"></i>
-      <span>Your session has expired. Please login again.</span>
-      <button onclick="App.logout()" style="background:none;border:none;color:inherit;margin-left:auto;">OK</button>
-    `;
-    document.body.appendChild(warning);
-    
-    setTimeout(() => {
-      warning.remove();
-      App.logout();
-    }, 5000);
-  }
-
-  static async api(action, data = {}) {
-    console.log(`📡 API Request: ${action}`, data);
-    
-    if (!CONFIG.API_URL) {
-      throw new Error('API URL not configured. Please set up backend URL.');
-    }
-    
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), CONFIG.REQUEST_TIMEOUT);
-    
-    try {
-      const requestData = {
-        action,
-        ...data,
-        userRole: localStorage.getItem('userRole') || '',
-        userBranch: localStorage.getItem('userBranch') || '',
-        timestamp: Date.now(),
-        clientIp: 'web_client'
-      };
-      
-      const formData = new FormData();
-      formData.append('data', JSON.stringify(requestData));
-      
-      const response = await fetch(CONFIG.API_URL, {
-        method: 'POST',
-        body: formData,
-        signal: controller.signal
-      });
-      
-      clearTimeout(timeoutId);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-      
-      const responseText = await response.text();
-      let jsonResponse;
-      
-      try {
-        jsonResponse = JSON.parse(responseText);
-      } catch (parseError) {
-        console.error('❌ JSON Parse Error:', parseError, 'Response:', responseText);
-        throw new Error('Invalid response from server');
-      }
-      
-      if (!jsonResponse.success) {
-        throw new Error(jsonResponse.message || 'Request failed');
-      }
-      
-      return jsonResponse;
-      
-    } catch (error) {
-      clearTimeout(timeoutId);
-      console.error('❌ API Call Failed:', error);
-      
-      let userMessage;
-      if (error.name === 'AbortError') {
-        userMessage = 'Request timeout. Please try again.';
-      } else if (error.message.includes('Failed to fetch')) {
-        userMessage = `Cannot connect to server. Please check your internet connection and API URL.`;
-      } else {
-        userMessage = error.message;
-      }
-      
-      this.error(userMessage);
-      throw error;
-    }
-  }
-
-  static loading(show = true, msg = 'Loading...') {
-    let loader = document.getElementById('globalLoader');
-    
-    if (!loader && show) {
-      loader = document.createElement('div');
-      loader.id = 'globalLoader';
-      loader.innerHTML = `
-        <div class="loading-spinner"></div>
-        <p>${msg}</p>
-      `;
-      document.body.appendChild(loader);
-    } else if (loader) {
-      loader.style.display = show ? 'flex' : 'none';
-      if (show && msg) {
-        loader.querySelector('p').textContent = msg;
-      }
-    }
-  }
-
-  static error(msg) {
-    console.error(`Error: ${msg}`);
-    
-    const existing = document.querySelector('.error-toast');
-    if (existing) existing.remove();
-    
-    const toast = document.createElement('div');
-    toast.className = 'error-toast';
-    toast.innerHTML = `
-      <i class="fas fa-exclamation-circle"></i>
-      <span>${msg}</span>
-      <button onclick="this.parentElement.remove()">×</button>
-    `;
-    
-    document.body.appendChild(toast);
-    
-    setTimeout(() => {
-      if (toast.parentElement) {
-        toast.remove();
-      }
-    }, 5000);
-  }
-
-  static success(msg) {
-    console.log(`Success: ${msg}`);
-    
-    const existing = document.querySelector('.success-toast');
-    if (existing) existing.remove();
-    
-    const toast = document.createElement('div');
-    toast.className = 'success-toast';
-    toast.innerHTML = `
-      <i class="fas fa-check-circle"></i>
-      <span>${msg}</span>
-      <button onclick="this.parentElement.remove()">×</button>
-    `;
-    
-    document.body.appendChild(toast);
-    
-    setTimeout(() => {
-      if (toast.parentElement) {
-        toast.remove();
-      }
-    }, 3000);
-  }
-
-  static setupGlobalEvents() {
-    // Password toggle
-    document.addEventListener('click', (e) => {
-      if (e.target.closest('.password-toggle')) {
-        const btn = e.target.closest('.password-toggle');
-        const input = btn.closest('.input-with-icon').querySelector('input');
-        const icon = btn.querySelector('i');
-        if (input.type === 'password') {
-          input.type = 'text';
-          icon.classList.remove('fa-eye');
-          icon.classList.add('fa-eye-slash');
-        } else {
-          input.type = 'password';
-          icon.classList.remove('fa-eye-slash');
-          icon.classList.add('fa-eye');
+        if (isLoggedIn && loginTime) {
+            const sessionAge = Date.now() - new Date(loginTime).getTime();
+            
+            if (sessionAge > AppConfig.SESSION_TIMEOUT) {
+                this.logout();
+                return;
+            }
+            
+            AppState.user = {
+                isLoggedIn: true,
+                role: localStorage.getItem('userRole'),
+                branch: localStorage.getItem('userBranch'),
+                name: localStorage.getItem('userName'),
+                loginTime: new Date(loginTime)
+            };
         }
-      }
-    });
-    
-    // Form validation
-    document.querySelectorAll('input[required]').forEach(input => {
-      input.addEventListener('blur', () => {
-        this.validateField(input);
-      });
-    });
-  }
-
-  static validateField(input) {
-    if (!input.value.trim() && input.required) {
-      input.classList.add('invalid');
-      return false;
     }
     
-    if (input.type === 'email' && input.value) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(input.value)) {
-        input.classList.add('invalid');
-        return false;
-      }
-    }
-    
-    if (input.type === 'tel' && input.value) {
-      const phoneRegex = /^[0-9+\s\-\(\)]{10,15}$/;
-      if (!phoneRegex.test(input.value)) {
-        input.classList.add('invalid');
-        return false;
-      }
-    }
-    
-    input.classList.remove('invalid');
-    input.classList.add('valid');
-    return true;
-  }
-
-  static loadCurrentPage() {
-    const page = location.pathname.split('/').pop() || 'index.html';
-    
-    switch(page) {
-      case 'login.html':
-        this.setupLogin();
-        break;
-      case 'register.html':
-        this.setupRegister();
-        break;
-      case 'dashboard.html':
-        this.setupDashboard();
-        break;
-      case 'index.html':
-        this.setupLanding();
-        break;
-    }
-  }
-
-  static async setupLanding() {
-    document.getElementById('currentYear').textContent = new Date().getFullYear();
-    
-    const totalBranches = Object.values(ZONES).flat().length;
-    document.getElementById('totalBranches').textContent = totalBranches;
-    document.getElementById('totalZones').textContent = Object.keys(ZONES).length;
-    
-    if (CONFIG.API_URL) {
-      try {
-        const response = await fetch(CONFIG.API_URL);
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success) {
-            document.getElementById('totalMembers').textContent = data.data?.totalMembers || 0;
-            document.getElementById('totalMasul').textContent = data.data?.totalMasul || 0;
-          }
-        }
-      } catch (error) {
-        console.log('Using default stats');
-      }
-    }
-  }
-
-  static setupLogin() {
-    const urlParams = new URLSearchParams(location.search);
-    const roleParam = urlParams.get('role');
-    
-    if (roleParam === 'admin') {
-      document.getElementById('adminBtn').click();
-    } else if (roleParam === 'masul') {
-      document.getElementById('masulBtn').click();
-    }
-    
-    document.querySelectorAll('.role-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        
-        const role = btn.dataset.role;
-        document.getElementById('loginTitle').textContent = 
-          role === 'admin' ? 'Admin Login' : 'Branch Mas\'ul Login';
-        
-        document.getElementById('branchGroup').style.display = 
-          role === 'masul' ? 'block' : 'none';
-          
-        if (role === 'masul') {
-          this.populateBranches('branchSelect');
-        }
-      });
-    });
-    
-    this.populateBranches('branchSelect');
-    
-    document.getElementById('loginForm').addEventListener('submit', async e => {
-      e.preventDefault();
-      
-      const activeBtn = document.querySelector('.role-btn.active');
-      if (!activeBtn) {
-        this.error('Please select a role');
-        return;
-      }
-      
-      const role = activeBtn.dataset.role;
-      const branch = document.getElementById('branchSelect').value;
-      const code = document.getElementById('accessCode').value.trim();
-      
-      if (!code) {
-        this.error('Please enter access code');
-        return;
-      }
-      
-      if (role === 'masul' && !branch) {
-        this.error('Please select your branch');
-        return;
-      }
-      
-      this.loading(true, 'Authenticating...');
-      
-      try {
-        const res = await this.api('login', { 
-          role, 
-          accessCode: code, 
-          branch: role === 'masul' ? branch : '' 
-        });
+    static saveUserSession(userData) {
+        AppState.user = {
+            isLoggedIn: true,
+            role: userData.role,
+            branch: userData.branch || null,
+            name: userData.name || (userData.role === 'admin' ? 'Administrator' : `Mas'ul (${userData.branch})`),
+            loginTime: new Date()
+        };
         
         localStorage.setItem('isLoggedIn', 'true');
-        localStorage.setItem('userRole', role);
-        localStorage.setItem('userBranch', branch || '');
-        localStorage.setItem('loginTime', new Date().toISOString());
-        localStorage.setItem('userName', role === 'admin' ? 'Administrator' : `Mas'ul (${branch})`);
+        localStorage.setItem('userRole', userData.role);
+        localStorage.setItem('userBranch', userData.branch || '');
+        localStorage.setItem('userName', AppState.user.name);
+        localStorage.setItem('loginTime', AppState.user.loginTime.toISOString());
         
-        this.success('Login successful! Redirecting...');
-        
-        setTimeout(() => {
-          location.href = role === 'admin' ? 'dashboard.html' : 'register.html';
-        }, 1500);
-        
-      } catch (err) {
-        console.error('Login failed:', err);
-      } finally {
-        this.loading(false);
-      }
-    });
-  }
-
-  static populateBranches(selectId) {
-    const select = document.getElementById(selectId);
-    if (!select) return;
-    
-    select.innerHTML = '<option value="">Select Branch</option>';
-    
-    Object.entries(ZONES).forEach(([zone, branches]) => {
-      const group = document.createElement('optgroup');
-      group.label = `ZONE: ${zone}`;
-      
-      branches.forEach(branch => {
-        const opt = document.createElement('option');
-        opt.value = branch;
-        opt.textContent = branch;
-        group.appendChild(opt);
-      });
-      
-      select.appendChild(group);
-    });
-  }
-
-  static populateZones(selectId, branchId) {
-    const zoneSel = document.getElementById(selectId);
-    const branchSel = document.getElementById(branchId);
-    
-    if (!zoneSel || !branchSel) return;
-    
-    zoneSel.innerHTML = '<option value="">Select Zone</option>';
-    branchSel.innerHTML = '<option value="">Select Branch</option>';
-    
-    Object.keys(ZONES).forEach(zone => {
-      const opt = document.createElement('option');
-      opt.value = zone;
-      opt.textContent = zone;
-      zoneSel.appendChild(opt);
-    });
-    
-    zoneSel.addEventListener('change', () => {
-      branchSel.innerHTML = '<option value="">Select Branch</option>';
-      
-      const selectedZone = zoneSel.value;
-      if (selectedZone && ZONES[selectedZone]) {
-        ZONES[selectedZone].forEach(branch => {
-          const opt = document.createElement('option');
-          opt.value = branch;
-          opt.textContent = branch;
-          branchSel.appendChild(opt);
-        });
-      }
-    });
-  }
-
-  static populateYears(selectId) {
-    const sel = document.getElementById(selectId);
-    if (!sel) return;
-    
-    sel.innerHTML = '<option value="">Select Year</option>';
-    const currentYear = new Date().getFullYear();
-    
-    for (let year = currentYear; year >= currentYear - 30; year--) {
-      const opt = document.createElement('option');
-      opt.value = year;
-      opt.textContent = year;
-      sel.appendChild(opt);
+        this.showSuccess('Login successful!');
     }
-  }
-
-  static async compressPhoto(file) {
-    return new Promise((resolve, reject) => {
-      if (!file) {
-        reject(new Error('No file selected'));
-        return;
-      }
-      
-      if (file.size > CONFIG.MAX_PHOTO_SIZE) {
-        reject(new Error('Photo too large (maximum 2MB)'));
-        return;
-      }
-      
-      const reader = new FileReader();
-      
-      reader.onload = (e) => {
-        const img = new Image();
+    
+    static logout() {
+        if (confirm('Are you sure you want to logout?')) {
+            // Clear all state
+            AppState.user = {
+                isLoggedIn: false,
+                role: null,
+                branch: null,
+                name: null,
+                loginTime: null
+            };
+            
+            // Clear localStorage
+            localStorage.clear();
+            
+            // Redirect to login
+            setTimeout(() => {
+                window.location.href = 'login.html';
+            }, 1000);
+            
+            this.showSuccess('Logged out successfully');
+        }
+    }
+    
+    static validateSession() {
+        const page = window.location.pathname.split('/').pop();
         
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
-          
-          let { width, height } = img;
-          
-          const maxSize = 800;
-          if (width > maxSize || height > maxSize) {
-            if (width > height) {
-              height = Math.round(height * (maxSize / width));
-              width = maxSize;
-            } else {
-              width = Math.round(width * (maxSize / height));
-              height = maxSize;
+        // Protected pages require login
+        const protectedPages = ['dashboard.html', 'register.html'];
+        
+        if (protectedPages.includes(page) && !AppState.user.isLoggedIn) {
+            window.location.href = 'login.html';
+            return false;
+        }
+        
+        // Role-based access control
+        if (page === 'dashboard.html' && AppState.user.role !== 'admin') {
+            window.location.href = 'login.html?role=admin';
+            return false;
+        }
+        
+        if (page === 'register.html' && !['masul', 'admin'].includes(AppState.user.role)) {
+            window.location.href = 'login.html?role=masul';
+            return false;
+        }
+        
+        return true;
+    }
+    
+    /**
+     * ========================
+     * API COMMUNICATION
+     * ========================
+     */
+    
+    static async apiRequest(action, data = {}) {
+        // Show loading indicator
+        this.showLoading(true);
+        
+        // Create request payload
+        const payload = {
+            action,
+            ...data,
+            userRole: AppState.user.role || '',
+            userBranch: AppState.user.branch || '',
+            timestamp: new Date().toISOString()
+        };
+        
+        // Create form data
+        const formData = new FormData();
+        formData.append('data', JSON.stringify(payload));
+        
+        try {
+            // Set timeout controller
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), AppConfig.REQUEST_TIMEOUT);
+            
+            // Make request
+            const response = await fetch(AppConfig.API_URL, {
+                method: 'POST',
+                body: formData,
+                signal: controller.signal
+            });
+            
+            clearTimeout(timeoutId);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
-          }
-          
-          canvas.width = width;
-          canvas.height = height;
-          
-          ctx.drawImage(img, 0, 0, width, height);
-          
-          try {
-            const base64 = canvas.toDataURL('image/jpeg', 0.8);
-            resolve(base64);
-          } catch (error) {
-            reject(new Error('Failed to compress image'));
-          }
-        };
-        
-        img.onerror = () => {
-          reject(new Error('Failed to load image'));
-        };
-        
-        img.src = e.target.result;
-      };
-      
-      reader.onerror = () => {
-        reject(new Error('Failed to read file'));
-      };
-      
-      reader.readAsDataURL(file);
-    });
-  }
-
-  static setupPhoto(uploadAreaId, inputId, previewId) {
-    const area = document.getElementById(uploadAreaId);
-    const input = document.getElementById(inputId);
-    const preview = document.getElementById(previewId);
-    
-    if (!area || !input || !preview) return;
-    
-    area.addEventListener('click', () => input.click());
-    
-    ['dragover', 'dragenter'].forEach(event => {
-      area.addEventListener(event, (e) => {
-        e.preventDefault();
-        area.classList.add('drag-over');
-      });
-    });
-    
-    ['dragleave', 'dragend', 'drop'].forEach(event => {
-      area.addEventListener(event, (e) => {
-        e.preventDefault();
-        area.classList.remove('drag-over');
-      });
-    });
-    
-    area.addEventListener('drop', (e) => {
-      e.preventDefault();
-      if (e.dataTransfer.files.length > 0) {
-        input.files = e.dataTransfer.files;
-        input.dispatchEvent(new Event('change'));
-      }
-    });
-    
-    input.addEventListener('change', async () => {
-      const file = input.files[0];
-      
-      if (!file) {
-        preview.style.display = 'none';
-        input.dataset.base64 = '';
-        return;
-      }
-      
-      if (!file.type.startsWith('image/')) {
-        this.error('Please select an image file (JPG, PNG)');
-        input.value = '';
-        preview.style.display = 'none';
-        input.dataset.base64 = '';
-        return;
-      }
-      
-      try {
-        this.loading(true, 'Processing image...');
-        const base64 = await this.compressPhoto(file);
-        preview.src = base64;
-        preview.style.display = 'block';
-        input.dataset.base64 = base64;
-        console.log('Photo compressed successfully');
-      } catch (error) {
-        this.error(error.message);
-        input.value = '';
-        preview.style.display = 'none';
-        input.dataset.base64 = '';
-      } finally {
-        this.loading(false);
-      }
-    });
-  }
-
-  static setupRegister() {
-    console.log('Setting up registration page...');
-    
-    // Show current user info
-    const userName = localStorage.getItem('userName') || 'User';
-    const userBranch = localStorage.getItem('userBranch');
-    document.getElementById('currentBranch').textContent = 
-      userBranch ? `Branch: ${userBranch}` : `User: ${userName}`;
-    
-    // Admin can register Mas'ul
-    const userRole = localStorage.getItem('userRole');
-    if (userRole === 'admin') {
-      document.getElementById('masulToggleContainer').style.display = 'block';
+            
+            // Parse response
+            const responseText = await response.text();
+            let result;
+            
+            try {
+                result = JSON.parse(responseText);
+            } catch (parseError) {
+                throw new Error('Invalid JSON response from server');
+            }
+            
+            if (!result.success) {
+                throw new Error(result.message || 'Request failed');
+            }
+            
+            // Cache successful responses
+            if (['getStatistics', 'getMembers', 'getAllZonesBranches'].includes(action)) {
+                this.cacheResponse(action, result.data);
+            }
+            
+            return result;
+            
+        } catch (error) {
+            console.error(`❌ API Request failed (${action}):`, error);
+            
+            let userMessage;
+            if (error.name === 'AbortError') {
+                userMessage = 'Request timeout. Please try again.';
+            } else if (error.message.includes('Failed to fetch')) {
+                userMessage = 'Cannot connect to server. Please check your internet connection.';
+            } else {
+                userMessage = error.message;
+            }
+            
+            this.showError(userMessage);
+            throw error;
+            
+        } finally {
+            this.showLoading(false);
+        }
     }
     
-    // Initialize form elements
-    this.populateZones('zone', 'branch');
-    this.populateYears('recruitmentYear');
-    this.setupPhoto('photoUpload', 'photoInput', 'photoPreview');
-    
-    // Set date limits
-    const today = new Date();
-    const minDate = new Date(today.getFullYear() - 100, today.getMonth(), today.getDate());
-    const maxDate = new Date(today.getFullYear() - 10, today.getMonth(), today.getDate());
-    
-    document.getElementById('birthDate')?.setAttribute('min', minDate.toISOString().split('T')[0]);
-    document.getElementById('birthDate')?.setAttribute('max', maxDate.toISOString().split('T')[0]);
-    document.getElementById('masulBirthDate')?.setAttribute('min', minDate.toISOString().split('T')[0]);
-    document.getElementById('masulBirthDate')?.setAttribute('max', maxDate.toISOString().split('T')[0]);
-    
-    // Phone validation
-    document.querySelectorAll('input[type="tel"]').forEach(input => {
-      input.addEventListener('input', function(e) {
-        this.value = this.value.replace(/[^0-9+]/g, '');
-      });
-    });
-    
-    // Form tabs with improved navigation
-    document.querySelectorAll('.form-tab').forEach(tab => {
-      tab.addEventListener('click', () => {
-        const tabId = tab.dataset.tab;
+    static cacheResponse(action, data) {
+        const now = Date.now();
         
-        document.querySelectorAll('.form-tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
+        switch(action) {
+            case 'getStatistics':
+                AppState.cache.statistics = data;
+                AppState.cache.lastUpdated = now;
+                break;
+            case 'getMembers':
+                AppState.cache.members = data;
+                AppState.cache.lastUpdated = now;
+                break;
+            case 'getAllZonesBranches':
+                AppState.cache.zones = data;
+                AppState.cache.lastUpdated = now;
+                break;
+        }
+    }
+    
+    static isCacheValid(key) {
+        if (!AppState.cache.lastUpdated) return false;
         
-        tab.classList.add('active');
-        document.getElementById(tabId + 'Tab').classList.add('active');
+        const cacheAge = Date.now() - AppState.cache.lastUpdated;
+        const cacheTimeout = 5 * 60 * 1000; // 5 minutes
+        
+        return cacheAge < cacheTimeout && AppState.cache[key];
+    }
+    
+    /**
+     * ========================
+     * LOGIN PAGE
+     * ========================
+     */
+    
+    static async initLoginPage() {
+        console.log('🔐 Initializing login page...');
+        
+        // Check backend status
+        await this.checkBackendStatus();
+        
+        // Setup role selector
+        this.setupRoleSelector();
+        
+        // Populate branches
+        this.populateBranches();
+        
+        // Setup form submission
+        this.setupLoginForm();
+        
+        // Setup password toggle
+        this.setupPasswordToggle();
+        
+        // Auto-focus access code
+        setTimeout(() => {
+            const accessCodeInput = document.getElementById('accessCode');
+            if (accessCodeInput) accessCodeInput.focus();
+        }, 100);
+    }
+    
+    static async checkBackendStatus() {
+        const backendInfo = document.getElementById('backendInfo');
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        
+        if (!backendInfo || !statusDot || !statusText) return;
+        
+        try {
+            const response = await fetch(AppConfig.API_URL);
+            
+            if (response.ok) {
+                const data = await response.json();
+                
+                if (data.success) {
+                    statusDot.className = 'status-dot online';
+                    statusText.textContent = `Connected to ${data.system} v${data.version}`;
+                    backendInfo.style.display = 'flex';
+                } else {
+                    statusDot.className = 'status-dot offline';
+                    statusText.textContent = 'Backend error';
+                    backendInfo.style.display = 'flex';
+                }
+            } else {
+                statusDot.className = 'status-dot offline';
+                statusText.textContent = `HTTP ${response.status}`;
+                backendInfo.style.display = 'flex';
+            }
+        } catch (error) {
+            statusDot.className = 'status-dot offline';
+            statusText.textContent = 'Cannot connect';
+            backendInfo.style.display = 'flex';
+        }
+    }
+    
+    static setupRoleSelector() {
+        const adminBtn = document.getElementById('adminBtn');
+        const masulBtn = document.getElementById('masulBtn');
+        const branchGroup = document.getElementById('branchGroup');
+        
+        if (!adminBtn || !masulBtn) return;
+        
+        const setActiveRole = (role) => {
+            // Update button states
+            adminBtn.classList.toggle('active', role === 'admin');
+            masulBtn.classList.toggle('active', role === 'masul');
+            
+            // Show/hide branch selection
+            if (branchGroup) {
+                branchGroup.style.display = role === 'masul' ? 'block' : 'none';
+            }
+            
+            // Update form title
+            const loginTitle = document.querySelector('.login-title');
+            if (loginTitle) {
+                loginTitle.textContent = role === 'admin' 
+                    ? 'Admin Login' 
+                    : 'Branch Mas\'ul Login';
+            }
+        };
+        
+        // Set initial role from URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const roleParam = urlParams.get('role');
+        
+        if (roleParam === 'admin') {
+            setActiveRole('admin');
+        } else if (roleParam === 'masul') {
+            setActiveRole('masul');
+        }
+        
+        // Add click handlers
+        adminBtn.addEventListener('click', () => setActiveRole('admin'));
+        masulBtn.addEventListener('click', () => setActiveRole('masul'));
+    }
+    
+    static populateBranches() {
+        const branchSelect = document.getElementById('branchSelect');
+        if (!branchSelect) return;
+        
+        branchSelect.innerHTML = '<option value="">-- Select Branch --</option>';
+        
+        // Add zones and branches
+        Object.entries(ZonesData).forEach(([zone, branches]) => {
+            const optgroup = document.createElement('optgroup');
+            optgroup.label = `Zone: ${zone}`;
+            
+            branches.forEach(branch => {
+                const option = document.createElement('option');
+                option.value = branch;
+                option.textContent = branch;
+                optgroup.appendChild(option);
+            });
+            
+            branchSelect.appendChild(optgroup);
+        });
+    }
+    
+    static setupLoginForm() {
+        const loginForm = document.getElementById('loginForm');
+        if (!loginForm) return;
+        
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Get active role
+            const activeRole = document.querySelector('.role-option.active');
+            if (!activeRole) {
+                this.showError('Please select a role');
+                return;
+            }
+            
+            const role = activeRole.dataset.role;
+            const branch = role === 'masul' ? document.getElementById('branchSelect').value : '';
+            const accessCode = document.getElementById('accessCode').value.trim();
+            
+            // Validate inputs
+            let isValid = true;
+            
+            if (!accessCode) {
+                this.showFieldError('accessCode', 'Access code is required');
+                isValid = false;
+            } else {
+                this.clearFieldError('accessCode');
+            }
+            
+            if (role === 'masul' && !branch) {
+                this.showFieldError('branchSelect', 'Please select your branch');
+                isValid = false;
+            } else {
+                this.clearFieldError('branchSelect');
+            }
+            
+            if (!isValid) return;
+            
+            // Disable login button
+            const loginBtn = document.getElementById('loginBtn');
+            const originalText = loginBtn.innerHTML;
+            loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Authenticating...';
+            loginBtn.disabled = true;
+            
+            try {
+                // Make API request
+                const result = await this.apiRequest('login', {
+                    role,
+                    accessCode,
+                    branch: role === 'masul' ? branch : ''
+                });
+                
+                // Save user session
+                this.saveUserSession({
+                    role,
+                    branch: result.data?.branch || '',
+                    name: result.data?.role === 'admin' ? 'Administrator' : `Mas'ul (${branch})`
+                });
+                
+                // Redirect based on role
+                setTimeout(() => {
+                    window.location.href = role === 'admin' ? 'dashboard.html' : 'register.html';
+                }, 1500);
+                
+            } catch (error) {
+                // Reset button
+                loginBtn.innerHTML = originalText;
+                loginBtn.disabled = false;
+            }
+        });
+    }
+    
+    static setupPasswordToggle() {
+        const toggleBtn = document.getElementById('togglePassword');
+        const passwordInput = document.getElementById('accessCode');
+        
+        if (!toggleBtn || !passwordInput) return;
+        
+        toggleBtn.addEventListener('click', () => {
+            const type = passwordInput.type === 'password' ? 'text' : 'password';
+            passwordInput.type = type;
+            
+            const icon = toggleBtn.querySelector('i');
+            icon.className = type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
+        });
+    }
+    
+    /**
+     * ========================
+     * REGISTRATION PAGE
+     * ========================
+     */
+    
+    static async initRegistrationPage() {
+        console.log('📝 Initializing registration page...');
+        
+        // Validate session
+        if (!this.validateSession()) return;
+        
+        // Update user info display
+        this.updateUserInfo();
+        
+        // Setup role toggle (admin only)
+        this.setupMasulToggle();
+        
+        // Initialize form steps
+        this.initFormSteps();
+        
+        // Populate dynamic fields
+        this.populateRegistrationFields();
+        
+        // Setup photo upload
+        this.setupPhotoUpload();
+        
+        // Setup form validation
+        this.setupFormValidation();
+        
+        // Setup form submission
+        this.setupRegistrationSubmission();
+    }
+    
+    static updateUserInfo() {
+        const currentBranch = document.getElementById('currentBranch');
+        const currentRole = document.getElementById('currentRole');
+        
+        if (currentBranch) {
+            currentBranch.textContent = AppState.user.branch 
+                ? `Branch: ${AppState.user.branch}` 
+                : 'System Admin';
+        }
+        
+        if (currentRole) {
+            currentRole.textContent = AppState.user.role === 'admin' 
+                ? 'Administrator' 
+                : 'Branch Mas\'ul';
+        }
+    }
+    
+    static setupMasulToggle() {
+        const toggleContainer = document.getElementById('roleToggleContainer');
+        const masulToggle = document.getElementById('masulToggle');
+        const formTitle = document.getElementById('formTitle');
+        
+        if (!toggleContainer || !masulToggle || !formTitle) return;
+        
+        // Only show toggle for admin users
+        if (AppState.user.role === 'admin') {
+            toggleContainer.style.display = 'block';
+            
+            masulToggle.addEventListener('change', (e) => {
+                const isMasulMode = e.target.checked;
+                AppState.registration.isMasulMode = isMasulMode;
+                
+                // Update form title
+                formTitle.textContent = isMasulMode 
+                    ? 'Mas\'ul Registration' 
+                    : 'Member Registration (Muntazirun)';
+                
+                // Show/hide forms
+                const memberForm = document.getElementById('step1');
+                const masulForm = document.getElementById('masulForm');
+                
+                if (memberForm) memberForm.style.display = isMasulMode ? 'none' : 'block';
+                if (masulForm) masulForm.style.display = isMasulMode ? 'block' : 'none';
+                
+                // Reset form state
+                if (isMasulMode) {
+                    this.initMasulForm();
+                } else {
+                    this.resetFormSteps();
+                }
+            });
+        }
+    }
+    
+    static initFormSteps() {
+        // Setup progress bar
+        this.updateProgressBar();
+        
+        // Setup step indicators
+        const steps = document.querySelectorAll('.step');
+        steps.forEach(step => {
+            step.addEventListener('click', () => {
+                const stepNumber = parseInt(step.dataset.step);
+                if (stepNumber <= AppState.registration.currentStep) {
+                    this.goToStep(stepNumber);
+                }
+            });
+        });
+    }
+    
+    static updateProgressBar() {
+        const progressBar = document.getElementById('progressBar');
+        if (!progressBar) return;
+        
+        const progress = (AppState.registration.currentStep / AppState.registration.totalSteps) * 100;
+        progressBar.style.width = `${progress}%`;
+        
+        // Update active step
+        document.querySelectorAll('.step').forEach(step => {
+            const stepNumber = parseInt(step.dataset.step);
+            
+            step.classList.remove('active', 'completed');
+            
+            if (stepNumber === AppState.registration.currentStep) {
+                step.classList.add('active');
+            } else if (stepNumber < AppState.registration.currentStep) {
+                step.classList.add('completed');
+            }
+        });
+    }
+    
+    static goToStep(stepNumber) {
+        // Validate current step before moving
+        if (!this.validateCurrentStep()) return;
+        
+        // Update current step
+        AppState.registration.currentStep = stepNumber;
+        
+        // Hide all steps
+        document.querySelectorAll('.form-section').forEach(section => {
+            section.classList.remove('active');
+        });
+        
+        // Show current step
+        const currentStep = document.getElementById(`step${stepNumber}`);
+        if (currentStep) {
+            currentStep.classList.add('active');
+        }
         
         // Update progress bar
-        this.updateFormProgress(tabId);
-      });
-    });
-    
-    // Next/Previous buttons
-    document.querySelectorAll('.next-tab').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        const currentTab = document.querySelector('.form-section.active');
-        const currentTabId = currentTab.id.replace('Tab', '');
-        const tabs = ['personal', 'contact', 'membership'];
-        const currentIndex = tabs.indexOf(currentTabId);
+        this.updateProgressBar();
         
-        if (currentIndex < tabs.length - 1) {
-          const nextTab = tabs[currentIndex + 1];
-          document.querySelector(`.form-tab[data-tab="${nextTab}"]`).click();
-        }
-      });
-    });
-    
-    document.querySelectorAll('.prev-tab').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        const currentTab = document.querySelector('.form-section.active');
-        const currentTabId = currentTab.id.replace('Tab', '');
-        const tabs = ['personal', 'contact', 'membership'];
-        const currentIndex = tabs.indexOf(currentTabId);
-        
-        if (currentIndex > 0) {
-          const prevTab = tabs[currentIndex - 1];
-          document.querySelector(`.form-tab[data-tab="${prevTab}"]`).click();
-        }
-      });
-    });
-    
-    // Member registration form
-    document.getElementById('memberRegistrationForm').addEventListener('submit', async e => {
-      e.preventDefault();
-      
-      // Validate all required fields first
-      const requiredFields = [
-        'fullName', 'firstName', 'fatherName', 'birthDate', 'gender',
-        'residentialAddress', 'phone1', 'memberLevel', 'zone', 'branch',
-        'recruitmentYear'
-      ];
-      
-      let isValid = true;
-      requiredFields.forEach(field => {
-        const element = document.getElementById(field);
-        if (element && !element.value.trim()) {
-          element.classList.add('invalid');
-          isValid = false;
-          this.error(`Please fill in ${field.replace(/([A-Z])/g, ' $1').toLowerCase()}`);
-        }
-      });
-      
-      if (!isValid) return;
-      
-      // Check photo
-      const photoInput = document.getElementById('photoInput');
-      if (!photoInput.dataset.base64) {
-        this.error('Please upload a passport photograph');
-        return;
-      }
-      
-      // Validate date
-      const birthDate = new Date(document.getElementById('birthDate').value);
-      const today = new Date();
-      const minAge = new Date(today.getFullYear() - 100, today.getMonth(), today.getDate());
-      const maxAge = new Date(today.getFullYear() - 10, today.getMonth(), today.getDate());
-      
-      if (birthDate < minAge || birthDate > maxAge) {
-        this.error('Age must be between 10 and 100 years');
-        return;
-      }
-      
-      this.loading(true, 'Registering member...');
-      
-      try {
-        const formData = {
-          fullName: document.getElementById('fullName').value,
-          firstName: document.getElementById('firstName').value,
-          fatherName: document.getElementById('fatherName').value,
-          grandfatherName: document.getElementById('grandfatherName').value,
-          birthDate: document.getElementById('birthDate').value,
-          gender: document.getElementById('gender').value,
-          residentialAddress: document.getElementById('residentialAddress').value,
-          neighborhood: document.getElementById('neighborhood').value,
-          localGovernment: document.getElementById('localGovernment').value,
-          state: document.getElementById('state').value,
-          phone1: document.getElementById('phone1').value,
-          phone2: document.getElementById('phone2').value,
-          parentsGuardians: document.getElementById('parentsGuardians').value,
-          parentAddress: document.getElementById('parentAddress').value,
-          parentNeighborhood: document.getElementById('parentNeighborhood').value,
-          parentLGA: document.getElementById('parentLGA').value,
-          parentState: document.getElementById('parentState').value,
-          zone: document.getElementById('zone').value,
-          branch: document.getElementById('branch').value,
-          recruitmentYear: document.getElementById('recruitmentYear').value,
-          memberLevel: document.getElementById('memberLevel').value,
-          photoBase64: photoInput.dataset.base64
-        };
-        
-        const res = await this.api('registerMember', formData);
-        this.showIdCard(res.data);
-        this.success('Member registered successfully!');
-      } catch (err) {
-        console.error('Registration error:', err);
-      } finally {
-        this.loading(false);
-      }
-    });
-    
-    // Mas'ul registration toggle
-    document.getElementById('masulToggle').addEventListener('change', e => {
-      const showMasulForm = e.target.checked;
-      
-      document.getElementById('formTitle').textContent = showMasulForm 
-        ? 'Mas\'ul Registration' 
-        : 'Member Registration (Muntazirun)';
-      
-      document.getElementById('memberFormSection').style.display = showMasulForm ? 'none' : 'block';
-      document.getElementById('masulFormSection').style.display = showMasulForm ? 'block' : 'none';
-      
-      if (showMasulForm) {
-        this.populateZones('masulZone', 'masulBranch');
-        this.populateYears('masulRecruitmentYear');
-        this.setupPhoto('masulPhotoUpload', 'masulPhotoInput', 'masulPhotoPreview');
-      }
-    });
-    
-    // Mas'ul registration form
-    document.getElementById('masulRegistrationForm').addEventListener('submit', async e => {
-      e.preventDefault();
-      
-      const requiredFields = [
-        'masulFullName', 'masulFatherName', 'masulBirthDate', 'masulEmail', 'masulPhone1',
-        'masulEducationLevel', 'masulResidentialAddress', 'masulZone', 'masulBranch',
-        'masulRecruitmentYear'
-      ];
-      
-      let isValid = true;
-      requiredFields.forEach(field => {
-        const element = document.getElementById(field);
-        if (element && !element.value.trim()) {
-          element.classList.add('invalid');
-          isValid = false;
-          this.error(`Please fill in ${field.replace('masul', '').replace(/([A-Z])/g, ' $1').toLowerCase()}`);
-        }
-      });
-      
-      if (!isValid) return;
-      
-      if (!document.getElementById('masulDeclaration').checked) {
-        this.error('Please accept the declaration');
-        return;
-      }
-      
-      const photoInput = document.getElementById('masulPhotoInput');
-      if (!photoInput.dataset.base64) {
-        this.error('Please upload a passport photograph');
-        return;
-      }
-      
-      this.loading(true, 'Registering Mas\'ul...');
-      
-      try {
-        const formData = {
-          fullName: document.getElementById('masulFullName').value,
-          fatherName: document.getElementById('masulFatherName').value,
-          birthDate: document.getElementById('masulBirthDate').value,
-          email: document.getElementById('masulEmail').value,
-          phone1: document.getElementById('masulPhone1').value,
-          phone2: document.getElementById('masulPhone2').value,
-          educationLevel: document.getElementById('masulEducationLevel').value,
-          courseStudying: document.getElementById('masulCourseStudying').value,
-          residentialAddress: document.getElementById('masulResidentialAddress').value,
-          zone: document.getElementById('masulZone').value,
-          branch: document.getElementById('masulBranch').value,
-          recruitmentYear: document.getElementById('masulRecruitmentYear').value,
-          declaration: true,
-          photoBase64: photoInput.dataset.base64
-        };
-        
-        const res = await this.api('registerMasul', formData);
-        this.showIdCard(res.data);
-        this.success('Mas\'ul registered successfully!');
-      } catch (err) {
-        console.error('Masul registration error:', err);
-      } finally {
-        this.loading(false);
-      }
-    });
-    
-    // Cancel Mas'ul form
-    document.getElementById('cancelMasulForm').addEventListener('click', () => {
-      document.getElementById('masulToggle').checked = false;
-      document.getElementById('masulToggle').dispatchEvent(new Event('change'));
-    });
-  }
-
-  static updateFormProgress(currentTab) {
-    const progressBar = document.getElementById('formProgress');
-    if (!progressBar) return;
-    
-    const tabs = ['personal', 'contact', 'membership'];
-    const currentIndex = tabs.indexOf(currentTab);
-    const progress = ((currentIndex + 1) / tabs.length) * 100;
-    
-    progressBar.style.width = `${progress}%`;
-    progressBar.textContent = `${Math.round(progress)}%`;
-  }
-
-  static showIdCard(data) {
-    const formContainer = document.getElementById('formContainer');
-    const successMessage = document.getElementById('successMessage');
-    
-    if (formContainer) formContainer.style.display = 'none';
-    if (successMessage) successMessage.style.display = 'block';
-    
-    // Populate ID card
-    const elements = {
-      'printFullName': data.fullName,
-      'printGlobalId': data.globalId,
-      'printRecruitmentId': data.recruitmentId,
-      'printBranch': data.branch,
-      'printLevel': data.level || data.memberLevel || 'N/A',
-      'printDate': new Date().toLocaleDateString('en-NG', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      })
-    };
-    
-    Object.entries(elements).forEach(([id, value]) => {
-      const el = document.getElementById(id);
-      if (el) el.textContent = value;
-    });
-    
-    // Photo
-    if (data.photoUrl) {
-      const photoEl = document.getElementById('printPhoto');
-      if (photoEl) {
-        photoEl.src = data.photoUrl;
-        photoEl.style.display = 'block';
-        document.getElementById('photoPlaceholder').style.display = 'none';
-      }
+        // Update navigation buttons
+        this.updateNavigationButtons();
     }
     
-    // Register another button
-    const registerAnotherBtn = document.getElementById('registerAnother');
-    if (registerAnotherBtn) {
-      registerAnotherBtn.onclick = () => {
-        successMessage.style.display = 'none';
-        formContainer.style.display = 'block';
-        document.getElementById('memberRegistrationForm').reset();
-        document.getElementById('masulRegistrationForm').reset();
-        document.getElementById('photoPreview').style.display = 'none';
-        document.getElementById('masulPhotoPreview').style.display = 'none';
-        document.getElementById('photoInput').dataset.base64 = '';
-        document.getElementById('masulPhotoInput').dataset.base64 = '';
-        document.querySelector('.form-tab[data-tab="personal"]').click();
-      };
+    static nextStep() {
+        if (AppState.registration.currentStep < AppState.registration.totalSteps) {
+            this.goToStep(AppState.registration.currentStep + 1);
+        }
     }
-  }
-
-  static setupDashboard() {
-    console.log('Setting up dashboard...');
     
-    // Sidebar toggle
-    document.getElementById('menuToggle').addEventListener('click', () => {
-      document.getElementById('sidebar').classList.toggle('collapsed');
-      document.querySelector('.main-content').classList.toggle('sidebar-collapsed');
-    });
+    static previousStep() {
+        if (AppState.registration.currentStep > 1) {
+            this.goToStep(AppState.registration.currentStep - 1);
+        }
+    }
     
-    // Menu navigation
-    document.querySelectorAll('.menu-item').forEach(item => {
-      item.addEventListener('click', e => {
-        e.preventDefault();
+    static validateCurrentStep() {
+        const currentStep = AppState.registration.currentStep;
+        let isValid = true;
         
-        const section = item.dataset.section;
-        if (!section) return;
-        
-        document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
-        document.querySelectorAll('.dashboard-section').forEach(s => s.classList.remove('active'));
-        
-        item.classList.add('active');
-        document.getElementById(section + 'Section').classList.add('active');
-        document.getElementById('pageTitle').textContent = item.textContent.trim();
-        
-        const methodName = `load${section.charAt(0).toUpperCase() + section.slice(1)}`;
-        if (this[methodName] && typeof this[methodName] === 'function') {
-          this[methodName]();
+        switch(currentStep) {
+            case 1: // Personal Info
+                isValid = this.validatePersonalInfo();
+                break;
+            case 2: // Contact Details
+                isValid = this.validateContactDetails();
+                break;
+            case 3: // Membership Details
+                isValid = this.validateMembershipDetails();
+                break;
         }
         
-        // Close sidebar on mobile after selection
-        if (window.innerWidth < 992) {
-          document.getElementById('sidebar').classList.remove('collapsed');
-          document.querySelector('.main-content').classList.remove('sidebar-collapsed');
+        if (!isValid) {
+            this.showError('Please fill in all required fields correctly');
         }
-      });
-    });
-    
-    // Initialize filters
-    this.populateZones('zoneFilter', 'branchFilter');
-    
-    // Filter events
-    document.getElementById('zoneFilter').addEventListener('change', () => {
-      const zone = document.getElementById('zoneFilter').value;
-      const branchSel = document.getElementById('branchFilter');
-      
-      branchSel.innerHTML = '<option value="">All Branches</option>';
-      
-      if (zone && ZONES[zone]) {
-        ZONES[zone].forEach(branch => {
-          const opt = document.createElement('option');
-          opt.value = branch;
-          opt.textContent = branch;
-          branchSel.appendChild(opt);
-        });
-      }
-    });
-    
-    document.getElementById('applyFilters').addEventListener('click', () => this.loadMembers());
-    document.getElementById('memberSearch').addEventListener('keyup', (e) => {
-      if (e.key === 'Enter') this.loadMembers();
-    });
-    
-    // Settings form
-    document.getElementById('settingsForm')?.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      const adminCode = document.getElementById('adminAccessCode').value;
-      const masulCode = document.getElementById('masulAccessCode').value;
-      
-      if (!adminCode && !masulCode) {
-        this.error('Please enter at least one access code');
-        return;
-      }
-      
-      this.loading(true, 'Updating settings...');
-      
-      try {
-        await this.api('updateSettings', {
-          adminAccessCode: adminCode,
-          masulAccessCode: masulCode
-        });
-        this.success('Settings updated successfully');
-      } catch (error) {
-        console.error('Settings update failed:', error);
-      } finally {
-        this.loading(false);
-      }
-    });
-    
-    // Export buttons
-    document.querySelectorAll('[data-export]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const type = btn.dataset.export;
-        this.exportData(type);
-      });
-    });
-    
-    // Load initial data
-    this.loadOverview();
-  }
-
-  static async loadOverview() {
-    this.loading(true, 'Loading dashboard...');
-    
-    try {
-      const res = await this.api('getStatistics');
-      const stats = res.data;
-      
-      // Update stats grid
-      const statsGrid = document.getElementById('statsGrid');
-      if (statsGrid) {
-        statsGrid.innerHTML = `
-          <div class="stat-card">
-            <span class="stat-number">${stats.totalMembers || 0}</span>
-            <span class="stat-label">Total Members</span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-number">${stats.totalMasul || 0}</span>
-            <span class="stat-label">Mas'ul Leaders</span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-number">${stats.brothers || 0}</span>
-            <span class="stat-label">Brothers</span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-number">${stats.sisters || 0}</span>
-            <span class="stat-label">Sisters</span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-number">${stats.recentMembers || 0}</span>
-            <span class="stat-label">Recent (30 days)</span>
-          </div>
-          <div class="stat-card">
-            <span class="stat-number">${stats.totalBranches || 0}</span>
-            <span class="stat-label">Active Branches</span>
-          </div>
-        `;
-      }
-      
-      document.getElementById('membersCount').textContent = stats.totalMembers || 0;
-      document.getElementById('masulCount').textContent = stats.totalMasul || 0;
-      
-      this.createZoneChart(stats.membersPerBranch || {});
-      this.createLevelChart(stats.membersPerLevel || {});
-      
-      await this.loadRecentActivity();
-      
-    } catch (error) {
-      console.error('Failed to load overview:', error);
-      this.error('Failed to load dashboard data');
-    } finally {
-      this.loading(false);
-    }
-  }
-
-  static createZoneChart(membersPerBranch) {
-    const ctx = document.getElementById('zoneChart');
-    if (!ctx) return;
-    
-    if (ctx.chart) {
-      ctx.chart.destroy();
+        
+        return isValid;
     }
     
-    const labels = Object.keys(membersPerBranch);
-    const data = Object.values(membersPerBranch);
-    
-    ctx.chart = new Chart(ctx, {
-      type: 'pie',
-      data: {
-        labels: labels,
-        datasets: [{
-          data: data,
-          backgroundColor: [
-            '#228B22', '#32CD32', '#E67E22', '#2C3E50', '#17A2B8',
-            '#6F42C1', '#20C997', '#FD7E14', '#DC3545'
-          ]
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          title: {
-            display: true,
-            text: 'Members Distribution by Branch'
-          }
-        }
-      }
-    });
-  }
-
-  static createLevelChart(membersPerLevel) {
-    const ctx = document.getElementById('levelChart');
-    if (!ctx) return;
-    
-    if (ctx.chart) {
-      ctx.chart.destroy();
-    }
-    
-    const labels = Object.keys(membersPerLevel);
-    const data = Object.values(membersPerLevel);
-    
-    ctx.chart = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: labels,
-        datasets: [{
-          label: 'Members',
-          data: data,
-          backgroundColor: '#228B22'
-        }]
-      },
-      options: {
-        responsive: true,
-        scales: {
-          y: {
-            beginAtZero: true,
-            title: {
-              display: true,
-              text: 'Number of Members'
+    static validatePersonalInfo() {
+        const requiredFields = ['fullName', 'firstName', 'fatherName', 'birthDate', 'gender'];
+        let isValid = true;
+        
+        requiredFields.forEach(field => {
+            const element = document.getElementById(field);
+            if (element && element.required && !element.value.trim()) {
+                this.showFieldError(field, 'This field is required');
+                isValid = false;
+            } else {
+                this.clearFieldError(field);
             }
-          }
-        },
-        plugins: {
-          title: {
-            display: true,
-            text: 'Members Distribution by Level'
-          }
-        }
-      }
-    });
-  }
-
-  static async loadRecentActivity() {
-    try {
-      const res = await this.api('getRecentActivity');
-      const activity = res.data || [];
-      
-      const activityList = document.getElementById('recentActivity');
-      if (activityList) {
-        if (activity.length === 0) {
-          activityList.innerHTML = '<p class="text-muted">No recent activity</p>';
-          return;
+        });
+        
+        // Validate age (minimum 8 years)
+        const birthDateInput = document.getElementById('birthDate');
+        if (birthDateInput && birthDateInput.value) {
+            const birthDate = new Date(birthDateInput.value);
+            const today = new Date();
+            const age = today.getFullYear() - birthDate.getFullYear();
+            
+            if (age < AppConfig.MIN_AGE) {
+                this.showFieldError('birthDate', `Age must be at least ${AppConfig.MIN_AGE} years`);
+                isValid = false;
+            } else if (age > AppConfig.MAX_AGE) {
+                this.showFieldError('birthDate', `Age must be less than ${AppConfig.MAX_AGE} years`);
+                isValid = false;
+            }
         }
         
-        activityList.innerHTML = activity.map(item => `
-          <div class="activity-item">
-            <div class="activity-time">${new Date(item.timestamp).toLocaleString()}</div>
-            <div class="activity-desc">
-              <strong>${item.action}</strong>: ${item.description}
-              ${item.userBranch ? `<span class="activity-branch">(${item.userBranch})</span>` : ''}
-            </div>
-            <div class="activity-role">${item.userRole || 'System'}</div>
-          </div>
-        `).join('');
-      }
-    } catch (error) {
-      console.error('Failed to load activity:', error);
+        return isValid;
     }
-  }
-
-  static async loadMembers() {
-    this.loading(true, 'Loading members...');
     
-    try {
-      const filters = {
-        zone: document.getElementById('zoneFilter').value,
-        branch: document.getElementById('branchFilter').value,
-        level: document.getElementById('levelFilter').value,
-        gender: document.getElementById('genderFilter').value,
-        search: document.getElementById('memberSearch').value
-      };
-      
-      const res = await this.api('getMembers', filters);
-      const members = res.data || [];
-      
-      const tbody = document.getElementById('membersTableBody');
-      if (tbody) {
-        if (members.length === 0) {
-          tbody.innerHTML = `
-            <tr>
-              <td colspan="10" class="text-center empty-state">
-                <i class="fas fa-users-slash fa-3x"></i>
-                <p>No members found matching your criteria</p>
-              </td>
-            </tr>
-          `;
-        } else {
-          tbody.innerHTML = members.map(member => `
-            <tr>
-              <td><input type="checkbox" class="selectMember" data-id="${member.id}"></td>
-              <td>
-                ${member.photoUrl ? 
-                  `<img src="${member.photoUrl}" class="table-photo" alt="Photo">` : 
-                  `<div class="photo-placeholder">IIM</div>`
-                }
-              </td>
-              <td><code>${member.id}</code></td>
-              <td><code>${member.recruitmentId}</code></td>
-              <td><strong>${member.fullName}</strong></td>
-              <td><span class="badge ${member.gender === 'Brother' ? 'badge-primary' : 'badge-pink'}">${member.gender}</span></td>
-              <td>${member.phone}</td>
-              <td>${member.branch}</td>
-              <td><span class="badge badge-level-${member.level?.toLowerCase()}">${member.level}</span></td>
-              <td>
-                <div class="action-buttons">
-                  <button class="btn-icon btn-view" onclick="App.viewMember('${member.id}')" title="View Details">
-                    <i class="fas fa-eye"></i>
-                  </button>
-                  <button class="btn-icon btn-promote" onclick="App.promoteMember('${member.id}')" title="Promote">
-                    <i class="fas fa-arrow-up"></i>
-                  </button>
-                  <button class="btn-icon btn-transfer" onclick="App.transferMember('${member.id}')" title="Transfer">
-                    <i class="fas fa-exchange-alt"></i>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          `).join('');
+    static validateContactDetails() {
+        const requiredFields = ['residentialAddress', 'phone1'];
+        let isValid = true;
+        
+        requiredFields.forEach(field => {
+            const element = document.getElementById(field);
+            if (element && element.required && !element.value.trim()) {
+                this.showFieldError(field, 'This field is required');
+                isValid = false;
+            } else {
+                this.clearFieldError(field);
+            }
+        });
+        
+        // Validate phone number format
+        const phoneInput = document.getElementById('phone1');
+        if (phoneInput && phoneInput.value) {
+            const phoneRegex = /^[0-9+\s\-\(\)]{10,15}$/;
+            if (!phoneRegex.test(phoneInput.value)) {
+                this.showFieldError('phone1', 'Please enter a valid phone number');
+                isValid = false;
+            }
         }
-      }
-      
-      // Select all checkbox
-      const selectAll = document.getElementById('selectAllMembers');
-      if (selectAll) {
-        selectAll.checked = false;
-        selectAll.onchange = (e) => {
-          const checkboxes = document.querySelectorAll('.selectMember');
-          checkboxes.forEach(cb => cb.checked = e.target.checked);
+        
+        return isValid;
+    }
+    
+    static validateMembershipDetails() {
+        const requiredFields = ['zone', 'branch', 'recruitmentYear', 'memberLevel'];
+        let isValid = true;
+        
+        requiredFields.forEach(field => {
+            const element = document.getElementById(field);
+            if (element && element.required && !element.value.trim()) {
+                this.showFieldError(field, 'This field is required');
+                isValid = false;
+            } else {
+                this.clearFieldError(field);
+            }
+        });
+        
+        // Validate photo
+        const photoInput = document.getElementById('photoInput');
+        if (photoInput && photoInput.required && !photoInput.dataset.base64) {
+            this.showError('Please upload a passport photograph');
+            isValid = false;
+        }
+        
+        return isValid;
+    }
+    
+    static populateRegistrationFields() {
+        // Populate zones and branches
+        this.populateZonesBranches();
+        
+        // Populate years (last 30 years)
+        this.populateYears();
+        
+        // Set date limits for birth date
+        this.setDateLimits();
+        
+        // Setup phone validation
+        this.setupPhoneValidation();
+    }
+    
+    static populateZonesBranches() {
+        const zoneSelect = document.getElementById('zone');
+        const branchSelect = document.getElementById('branch');
+        
+        if (!zoneSelect || !branchSelect) return;
+        
+        // Clear existing options
+        zoneSelect.innerHTML = '<option value="">Select Zone</option>';
+        branchSelect.innerHTML = '<option value="">Select Branch</option>';
+        
+        // Add zones
+        Object.keys(ZonesData).forEach(zone => {
+            const option = document.createElement('option');
+            option.value = zone;
+            option.textContent = zone;
+            zoneSelect.appendChild(option);
+        });
+        
+        // Zone change handler
+        zoneSelect.addEventListener('change', () => {
+            const selectedZone = zoneSelect.value;
+            branchSelect.innerHTML = '<option value="">Select Branch</option>';
+            
+            if (selectedZone && ZonesData[selectedZone]) {
+                ZonesData[selectedZone].forEach(branch => {
+                    const option = document.createElement('option');
+                    option.value = branch;
+                    option.textContent = branch;
+                    branchSelect.appendChild(option);
+                });
+            }
+        });
+    }
+    
+    static populateYears() {
+        const yearSelects = document.querySelectorAll('select[id$="Year"]');
+        
+        yearSelects.forEach(select => {
+            const currentYear = new Date().getFullYear();
+            select.innerHTML = '<option value="">Select Year</option>';
+            
+            for (let year = currentYear; year >= currentYear - 30; year--) {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                select.appendChild(option);
+            }
+        });
+    }
+    
+    static setDateLimits() {
+        const birthDateInputs = document.querySelectorAll('input[type="date"]');
+        const today = new Date();
+        
+        birthDateInputs.forEach(input => {
+            const maxDate = new Date(today.getFullYear() - AppConfig.MIN_AGE, today.getMonth(), today.getDate());
+            const minDate = new Date(today.getFullYear() - AppConfig.MAX_AGE, today.getMonth(), today.getDate());
+            
+            input.max = maxDate.toISOString().split('T')[0];
+            input.min = minDate.toISOString().split('T')[0];
+        });
+    }
+    
+    static setupPhoneValidation() {
+        const phoneInputs = document.querySelectorAll('input[type="tel"]');
+        
+        phoneInputs.forEach(input => {
+            input.addEventListener('input', (e) => {
+                e.target.value = e.target.value.replace(/[^0-9+]/g, '');
+            });
+        });
+    }
+    
+    static setupPhotoUpload() {
+        const uploadArea = document.getElementById('photoUploadArea');
+        const photoInput = document.getElementById('photoInput');
+        const photoPreview = document.getElementById('photoPreview');
+        
+        if (!uploadArea || !photoInput || !photoPreview) return;
+        
+        // Click to upload
+        uploadArea.addEventListener('click', () => photoInput.click());
+        
+        // Drag and drop
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, () => {
+                uploadArea.classList.add('drag-over');
+            }, false);
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, () => {
+                uploadArea.classList.remove('drag-over');
+            }, false);
+        });
+        
+        uploadArea.addEventListener('drop', handleDrop, false);
+        
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const file = dt.files[0];
+            
+            if (file && file.type.startsWith('image/')) {
+                photoInput.files = dt.files;
+                photoInput.dispatchEvent(new Event('change'));
+            }
+        }
+        
+        // File selection
+        photoInput.addEventListener('change', async () => {
+            const file = photoInput.files[0];
+            
+            if (!file) {
+                photoPreview.style.display = 'none';
+                photoInput.dataset.base64 = '';
+                return;
+            }
+            
+            // Validate file type
+            if (!AppConfig.ALLOWED_IMAGE_TYPES.includes(file.type)) {
+                this.showError('Please upload only JPG or PNG images');
+                photoInput.value = '';
+                return;
+            }
+            
+            // Validate file size
+            if (file.size > AppConfig.MAX_PHOTO_SIZE) {
+                this.showError(`Image too large. Maximum size is ${AppConfig.MAX_PHOTO_SIZE / (1024 * 1024)}MB`);
+                photoInput.value = '';
+                return;
+            }
+            
+            try {
+                this.showLoading(true, 'Processing image...');
+                
+                // Compress and convert to base64
+                const base64 = await this.compressImage(file);
+                
+                // Update preview
+                photoPreview.src = base64;
+                photoPreview.classList.add('show');
+                
+                // Store base64 data
+                photoInput.dataset.base64 = base64;
+                
+                // Mark as valid
+                photoInput.classList.remove('error');
+                photoInput.classList.add('success');
+                
+                this.showSuccess('Photo uploaded successfully');
+                
+            } catch (error) {
+                this.showError('Failed to process image: ' + error.message);
+                photoInput.value = '';
+                photoPreview.style.display = 'none';
+                photoInput.dataset.base64 = '';
+            } finally {
+                this.showLoading(false);
+            }
+        });
+    }
+    
+    static async compressImage(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            
+            reader.onload = (e) => {
+                const img = new Image();
+                
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    
+                    // Calculate new dimensions (max 800px)
+                    let { width, height } = img;
+                    const maxSize = 800;
+                    
+                    if (width > maxSize || height > maxSize) {
+                        if (width > height) {
+                            height = Math.round((height * maxSize) / width);
+                            width = maxSize;
+                        } else {
+                            width = Math.round((width * maxSize) / height);
+                            height = maxSize;
+                        }
+                    }
+                    
+                    canvas.width = width;
+                    canvas.height = height;
+                    
+                    // Draw and compress
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    try {
+                        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8);
+                        resolve(compressedBase64);
+                    } catch (error) {
+                        reject(new Error('Image compression failed'));
+                    }
+                };
+                
+                img.onerror = () => {
+                    reject(new Error('Failed to load image'));
+                };
+                
+                img.src = e.target.result;
+            };
+            
+            reader.onerror = () => {
+                reject(new Error('Failed to read file'));
+            };
+            
+            reader.readAsDataURL(file);
+        });
+    }
+    
+    static setupFormValidation() {
+        // Real-time validation for required fields
+        document.querySelectorAll('[required]').forEach(field => {
+            field.addEventListener('blur', () => {
+                if (!field.value.trim()) {
+                    this.showFieldError(field.id, 'This field is required');
+                } else {
+                    this.clearFieldError(field.id);
+                    
+                    // Additional validation for specific fields
+                    if (field.type === 'tel') {
+                        const phoneRegex = /^[0-9+\s\-\(\)]{10,15}$/;
+                        if (!phoneRegex.test(field.value)) {
+                            this.showFieldError(field.id, 'Please enter a valid phone number');
+                        }
+                    }
+                }
+            });
+        });
+    }
+    
+    static setupRegistrationSubmission() {
+        const submitBtn = document.querySelector('button[onclick*="submitRegistration"]');
+        if (!submitBtn) return;
+        
+        submitBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.submitRegistration();
+        });
+    }
+    
+    static async submitRegistration() {
+        // Validate all steps
+        if (!this.validateCurrentStep()) return;
+        
+        // Gather form data
+        const formData = this.gatherFormData();
+        
+        // Determine API endpoint
+        const endpoint = AppState.registration.isMasulMode ? 'registerMasul' : 'registerMember';
+        
+        // Show loading
+        this.showLoading(true, 'Registering...');
+        
+        try {
+            // Make API request
+            const result = await this.apiRequest(endpoint, formData);
+            
+            if (result.success) {
+                // Show success state
+                this.showRegistrationSuccess(result.data);
+            } else {
+                throw new Error(result.message || 'Registration failed');
+            }
+            
+        } catch (error) {
+            console.error('Registration failed:', error);
+            this.showError('Registration failed: ' + error.message);
+        } finally {
+            this.showLoading(false);
+        }
+    }
+    
+    static gatherFormData() {
+        const formData = {};
+        
+        // Get all form fields
+        const fields = document.querySelectorAll('input, select, textarea');
+        fields.forEach(field => {
+            if (field.id && !field.id.includes('toggle')) {
+                const key = field.id.replace('masul', '');
+                formData[key] = field.value;
+            }
+        });
+        
+        // Add photo base64
+        const photoInput = document.getElementById('photoInput');
+        if (photoInput && photoInput.dataset.base64) {
+            formData.photoBase64 = photoInput.dataset.base64;
+        }
+        
+        // Add user info
+        formData.userRole = AppState.user.role;
+        formData.userBranch = AppState.user.branch;
+        
+        return formData;
+    }
+    
+    static showRegistrationSuccess(data) {
+        // Hide form
+        const formContainer = document.querySelector('.form-container');
+        if (formContainer) formContainer.style.display = 'none';
+        
+        // Show success state
+        const successState = document.querySelector('.success-state');
+        if (successState) successState.classList.add('active');
+        
+        // Update success details
+        this.updateSuccessDetails(data);
+        
+        // Go to step 4
+        this.goToStep(4);
+    }
+    
+    static updateSuccessDetails(data) {
+        const elements = {
+            'successName': data.fullName,
+            'successGlobalId': data.globalId,
+            'successRecruitmentId': data.recruitmentId,
+            'successBranch': data.branch,
+            'successLevel': data.level || data.memberLevel || 'N/A',
+            'successDate': new Date().toLocaleDateString('en-NG', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            })
         };
-      }
-      
-    } catch (error) {
-      console.error('Failed to load members:', error);
-      this.error('Failed to load members');
-    } finally {
-      this.loading(false);
-    }
-  }
-
-  static async viewMember(id) {
-    this.loading(true, 'Loading member details...');
-    
-    try {
-      const res = await this.api('getMemberDetails', { memberId: id });
-      const data = res.data;
-      
-      const modal = this.createMemberModal(data);
-      document.body.appendChild(modal);
-      
-    } catch (error) {
-      console.error('Failed to load member details:', error);
-      this.error('Failed to load member details');
-    } finally {
-      this.loading(false);
-    }
-  }
-
-  static createMemberModal(data) {
-    const modal = document.createElement('div');
-    modal.className = 'modal';
-    modal.innerHTML = `
-      <div class="modal-content">
-        <div class="modal-header">
-          <h3><i class="fas fa-user"></i> Member Details</h3>
-          <button class="modal-close">×</button>
-        </div>
         
-        <div class="modal-body">
-          ${this.createMemberDetailsHTML(data)}
-        </div>
-        
-        <div class="modal-footer">
-          <button class="btn btn-secondary" onclick="this.closest('.modal').remove()">Close</button>
-          <button class="btn btn-primary" onclick="window.print()">
-            <i class="fas fa-print"></i> Print Profile
-          </button>
-        </div>
-      </div>
-    `;
-    
-    modal.querySelector('.modal-close').addEventListener('click', () => modal.remove());
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) {
-        modal.remove();
-      }
-    });
-    
-    return modal;
-  }
-
-  static createMemberDetailsHTML(data) {
-    return `
-      <div class="member-profile">
-        <div class="member-photo">
-          <img src="${data.Photo_URL || 'https://via.placeholder.com/200/228B22/FFFFFF?text=IIM'}" alt="Photo">
-        </div>
-        <div class="member-info">
-          <h4>${data.Full_Name || 'N/A'}</h4>
-          <div class="info-grid">
-            <div><strong>Global ID:</strong> <code>${data.Global_ID}</code></div>
-            <div><strong>Recruitment ID:</strong> <code>${data.Recruitment_ID}</code></div>
-            <div><strong>Type:</strong> ${data.Type}</div>
-            <div><strong>Gender:</strong> ${data.Gender}</div>
-            <div><strong>Branch:</strong> ${data.Branch}</div>
-            <div><strong>Zone:</strong> ${data.Zone}</div>
-            <div><strong>Level:</strong> ${data.Member_Level}</div>
-            <div><strong>Status:</strong> ${data.Status}</div>
-          </div>
-        </div>
-      </div>
-      
-      <div class="contact-section">
-        <h5>Contact Information</h5>
-        <div class="info-grid">
-          <div><strong>Phone 1:</strong> ${data.Phone_1 || 'N/A'}</div>
-          <div><strong>Phone 2:</strong> ${data.Phone_2 || 'N/A'}</div>
-          <div><strong>Email:</strong> ${data.Email || 'N/A'}</div>
-          <div><strong>Address:</strong> ${data.Residential_Address || 'N/A'}</div>
-        </div>
-      </div>
-      
-      ${data.Type === 'Member' ? `
-        <div class="personal-section">
-          <h5>Personal Information</h5>
-          <div class="info-grid">
-            <div><strong>Father's Name:</strong> ${data.Father_Name || 'N/A'}</div>
-            <div><strong>Birth Date:</strong> ${data.Birth_Date || 'N/A'}</div>
-            <div><strong>Local Government:</strong> ${data.Local_Government || 'N/A'}</div>
-            <div><strong>State:</strong> ${data.State || 'N/A'}</div>
-            <div><strong>Parents/Guardians:</strong> ${data.Parents_Guardians || 'N/A'}</div>
-            <div><strong>Registration Date:</strong> ${new Date(data.Registration_Date).toLocaleDateString()}</div>
-          </div>
-        </div>
-      ` : ''}
-    `;
-  }
-
-  static async promoteMember(id) {
-    const newLevel = prompt(`Enter new level for member ${id}:\n\nAvailable levels: ${LEVELS.join(', ')}`);
-    
-    if (!newLevel || !LEVELS.includes(newLevel)) {
-      if (newLevel) this.error('Invalid level. Please select from: ' + LEVELS.join(', '));
-      return;
-    }
-    
-    const notes = prompt('Enter promotion notes (optional):');
-    
-    if (confirm(`Promote member to ${newLevel}?`)) {
-      this.loading(true, 'Promoting member...');
-      
-      try {
-        await this.api('promoteMember', { 
-          memberId: id, 
-          newLevel: newLevel,
-          notes: notes || ''
+        Object.entries(elements).forEach(([id, value]) => {
+            const element = document.getElementById(id);
+            if (element) element.textContent = value;
         });
         
-        this.success('Member promoted successfully!');
-        this.loadMembers();
-      } catch (error) {
-        console.error('Promotion failed:', error);
-      } finally {
-        this.loading(false);
-      }
-    }
-  }
-
-  static async transferMember(id) {
-    const allBranches = Object.values(ZONES).flat();
-    
-    let branchList = '';
-    allBranches.forEach((branch, index) => {
-      branchList += `${index + 1}. ${branch}\n`;
-    });
-    
-    const newBranch = prompt(`Enter new branch for member ${id}:\n\nAvailable branches:\n${branchList}`);
-    
-    if (!newBranch || !allBranches.includes(newBranch)) {
-      if (newBranch) this.error('Invalid branch. Please select from the list.');
-      return;
-    }
-    
-    const notes = prompt('Enter transfer notes (optional):');
-    
-    if (confirm(`Transfer member to ${newBranch}?`)) {
-      this.loading(true, 'Transferring member...');
-      
-      try {
-        await this.api('transferMember', { 
-          memberId: id, 
-          newBranch: newBranch,
-          notes: notes || ''
-        });
-        
-        this.success('Member transferred successfully!');
-        this.loadMembers();
-      } catch (error) {
-        console.error('Transfer failed:', error);
-      } finally {
-        this.loading(false);
-      }
-    }
-  }
-
-  static async exportData(type) {
-    if (!confirm(`Export ${type} data as CSV?`)) return;
-    
-    this.loading(true, 'Exporting data...');
-    
-    try {
-      const res = await this.api('exportData', { type: type });
-      const data = res.data;
-      
-      if (data && data.downloadUrl) {
-        window.open(data.downloadUrl, '_blank');
-        this.success(`Export completed! File: ${data.fileName}`);
-      } else {
-        throw new Error('No download URL received');
-      }
-    } catch (error) {
-      console.error('Export failed:', error);
-      this.error('Export failed: ' + (error.message || 'Unknown error'));
-    } finally {
-      this.loading(false);
-    }
-  }
-
-  static async backupSystem() {
-    if (!confirm('Create system backup? This may take a moment.')) return;
-    
-    this.loading(true, 'Creating backup...');
-    
-    try {
-      const res = await this.api('backupSystem');
-      const data = res.data;
-      
-      if (data && data.backupUrl) {
-        window.open(data.backupUrl, '_blank');
-        this.success('Backup created successfully!');
-      } else {
-        throw new Error('No backup URL received');
-      }
-    } catch (error) {
-      console.error('Backup failed:', error);
-      this.error('Backup failed: ' + (error.message || 'Unknown error'));
-    } finally {
-      this.loading(false);
-    }
-  }
-
-  static logout() {
-    if (confirm('Are you sure you want to logout?')) {
-      localStorage.clear();
-      this.success('Logged out successfully');
-      setTimeout(() => {
-        location.href = 'index.html';
-      }, 1000);
-    }
-  }
-
-  static switchSection(section) {
-    const item = document.querySelector(`.menu-item[data-section="${section}"]`);
-    if (item) {
-      item.click();
-    }
-  }
-}
-
-// Initialize app when DOM is loaded
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM loaded, initializing App...');
-    App.init();
-  });
-} else {
-  console.log('DOM already loaded, initializing App...');
-  App.init();
-}
-
-// Make App available globally
-window.App = App;
-console.log('✅ App.js loaded successfully');          <td>
-                ${m.photoUrl || m.Photo_URL ? 
-                  `<img src="${m.photoUrl || m.Photo_URL}" class="table-photo" alt="Photo">` : 
-                  `<div class="photo-placeholder">${(m.fullName || m.Full_Name || 'M').charAt(0)}</div>`
-                }
-              </td>
-              <td><code>${m.id || m.Global_ID || 'N/A'}</code></td>
-              <td><code>${m.recruitmentId || m.Recruitment_ID || 'N/A'}</code></td>
-              <td><strong>${m.fullName || m.Full_Name || 'N/A'}</strong></td>
-              <td>${m.email || m.Email || 'N/A'}</td>
-              <td>${m.phone || m.Phone_1 || 'N/A'}</td>
-              <td>${m.branch || m.Branch || 'N/A'}</td>
-              <td>${m.recruitmentYear || m.Recruitment_Year || 'N/A'}</td>
-              <td>
-                <div class="action-buttons">
-                  <button class="btn-icon btn-view" onclick="App.viewMember('${m.id || m.Global_ID}')">
-                    <i class="fas fa-eye"></i>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          `).join('');
+        // Update photo
+        const successPhoto = document.getElementById('successPhoto');
+        if (successPhoto && data.photoUrl) {
+            successPhoto.src = data.photoUrl;
+            successPhoto.style.display = 'block';
         }
-      }
-    } catch (error) {
-      console.error('Failed to load Mas\'ul:', error);
-      this.error('Failed to load Mas\'ul');
-    } finally {
-      this.loading(false);
     }
-  }
-
-  static async viewMember(id) {
-    this.loading(true, 'Loading member details...');
     
-    try {
-      const res = await this.api('getMemberDetails', { memberId: id });
-      const data = res.data;
-      
-      const modal = this.createMemberModal(data);
-      document.body.appendChild(modal);
-      
-    } catch (error) {
-      console.error('Failed to load member details:', error);
-      this.error('Failed to load member details');
-    } finally {
-      this.loading(false);
-    }
-  }
-
-  static createMemberModal(data) {
-    const modal = document.createElement('div');
-    modal.className = 'modal';
-    modal.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.7);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 9999;
-      padding: 20px;
-    `;
-    
-    modal.innerHTML = `
-      <div class="modal-content" style="
-        background: white;
-        border-radius: 10px;
-        width: 100%;
-        max-width: 700px;
-        max-height: 90vh;
-        overflow-y: auto;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-      ">
-        <div class="modal-header" style="
-          padding: 20px;
-          border-bottom: 1px solid #eee;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          background: #228B22;
-          color: white;
-          border-radius: 10px 10px 0 0;
-        ">
-          <h3 style="margin: 0;">
-            <i class="fas fa-user"></i> Member Details
-          </h3>
-          <button class="modal-close" style="
-            background: none;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            color: white;
-          ">×</button>
-        </div>
+    static resetForm() {
+        // Reset form state
+        AppState.registration.currentStep = 1;
+        AppState.registration.photoBase64 = null;
         
-        <div class="modal-body" style="padding: 20px;">
-          <!-- Member details will be populated here -->
-        </div>
+        // Reset form fields
+        const forms = document.querySelectorAll('form');
+        forms.forEach(form => form.reset());
         
-        <div class="modal-footer" style="
-          padding: 20px;
-          border-top: 1px solid #eee;
-          text-align: right;
-        ">
-          <button class="btn btn-secondary" style="
-            padding: 10px 20px;
-            margin-right: 10px;
-            background: #6c757d;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: 500;
-          " onclick="this.closest('.modal').remove()">
-            Close
-          </button>
-          <button class="btn btn-primary" style="
-            padding: 10px 20px;
-            background: #228B22;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: 500;
-          " onclick="window.print()">
-            <i class="fas fa-print"></i> Print Profile
-          </button>
-        </div>
-      </div>
-    `;
-    
-    const modalBody = modal.querySelector('.modal-body');
-    modalBody.innerHTML = this.createMemberDetailsHTML(data);
-    
-    modal.querySelector('.modal-close').addEventListener('click', () => modal.remove());
-    
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) {
-        modal.remove();
-      }
-    });
-    
-    return modal;
-  }
-
-  static createMemberDetailsHTML(data) {
-    return `
-      <div style="display: flex; gap: 30px; margin-bottom: 30px; flex-wrap: wrap;">
-        <div>
-          <img src="${data.Photo_URL || 'https://via.placeholder.com/200/228B22/FFFFFF?text=IIM'}" 
-               style="width: 200px; height: 200px; object-fit: cover; border-radius: 10px; border: 3px solid #228B22;">
-        </div>
-        <div style="flex: 1; min-width: 300px;">
-          <h4 style="color: #228B22; margin-top: 0; margin-bottom: 20px;">${data.Full_Name || 'N/A'}</h4>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-            <div><strong>Global ID:</strong> <code>${data.Global_ID}</code></div>
-            <div><strong>Recruitment ID:</strong> <code>${data.Recruitment_ID}</code></div>
-            <div><strong>Type:</strong> ${data.Type}</div>
-            <div><strong>Gender:</strong> ${data.Gender}</div>
-            <div><strong>Branch:</strong> ${data.Branch}</div>
-            <div><strong>Zone:</strong> ${data.Zone}</div>
-            <div><strong>Level:</strong> ${data.Member_Level}</div>
-            <div><strong>Status:</strong> ${data.Status}</div>
-          </div>
-        </div>
-      </div>
-      
-      <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-        <h5 style="margin-top: 0; color: #666; margin-bottom: 15px;">Contact Information</h5>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-          <div><strong>Phone 1:</strong> ${data.Phone_1 || 'N/A'}</div>
-          <div><strong>Phone 2:</strong> ${data.Phone_2 || 'N/A'}</div>
-          <div><strong>Email:</strong> ${data.Email || 'N/A'}</div>
-          <div><strong>Address:</strong> ${data.Residential_Address || 'N/A'}</div>
-        </div>
-      </div>
-      
-      ${data.Type === 'Member' ? `
-        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
-          <h5 style="margin-top: 0; color: #666; margin-bottom: 15px;">Personal Information</h5>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-            <div><strong>Father's Name:</strong> ${data.Father_Name || 'N/A'}</div>
-            <div><strong>Birth Date:</strong> ${data.Birth_Date || 'N/A'}</div>
-            <div><strong>Local Government:</strong> ${data.Local_Government || 'N/A'}</div>
-            <div><strong>State:</strong> ${data.State || 'N/A'}</div>
-            <div><strong>Parents/Guardians:</strong> ${data.Parents_Guardians || 'N/A'}</div>
-            <div><strong>Registration Date:</strong> ${new Date(data.Registration_Date).toLocaleDateString()}</div>
-          </div>
-        </div>
-      ` : ''}
-    `;
-  }
-
-  static async promoteMember(id) {
-    const newLevel = prompt(`Enter new level for member ${id}:\n\nAvailable levels: ${LEVELS.join(', ')}`);
-    
-    if (!newLevel || !LEVELS.includes(newLevel)) {
-      if (newLevel) this.error('Invalid level. Please select from: ' + LEVELS.join(', '));
-      return;
+        // Clear photo preview
+        const photoPreview = document.getElementById('photoPreview');
+        if (photoPreview) {
+            photoPreview.style.display = 'none';
+            photoPreview.classList.remove('show');
+        }
+        
+        // Clear photo input
+        const photoInput = document.getElementById('photoInput');
+        if (photoInput) {
+            photoInput.dataset.base64 = '';
+            photoInput.value = '';
+        }
+        
+        // Hide success state
+        const successState = document.querySelector('.success-state');
+        if (successState) successState.classList.remove('active');
+        
+        // Show form container
+        const formContainer = document.querySelector('.form-container');
+        if (formContainer) formContainer.style.display = 'block';
+        
+        // Go to step 1
+        this.goToStep(1);
     }
     
-    const notes = prompt('Enter promotion notes (optional):');
+    /**
+     * ========================
+     * DASHBOARD
+     * ========================
+     */
     
-    if (confirm(`Promote member to ${newLevel}?`)) {
-      this.loading(true, 'Promoting member...');
-      
-      try {
-        await this.api('promoteMember', { 
-          memberId: id, 
-          newLevel: newLevel,
-          notes: notes || ''
+    static async initDashboard() {
+        console.log('📊 Initializing dashboard...');
+        
+        // Validate session
+        if (!this.validateSession()) return;
+        
+        // Setup UI
+        this.setupDashboardUI();
+        
+        // Load initial data
+        await this.loadDashboardData();
+        
+        // Setup event listeners
+        this.setupDashboardEvents();
+    }
+    
+    static setupDashboardUI() {
+        // Update user info in sidebar
+        this.updateDashboardUserInfo();
+        
+        // Setup sidebar toggle
+        this.setupSidebarToggle();
+        
+        // Setup menu navigation
+        this.setupMenuNavigation();
+        
+        // Setup search functionality
+        this.setupSearch();
+        
+        // Setup filters
+        this.setupFilters();
+    }
+    
+    static updateDashboardUserInfo() {
+        const userName = document.getElementById('sidebarUserName');
+        const userRole = document.getElementById('sidebarUserRole');
+        
+        if (userName) userName.textContent = AppState.user.name;
+        if (userRole) userRole.textContent = AppState.user.role === 'admin' ? 'System Admin' : 'Branch Mas\'ul';
+    }
+    
+    static setupSidebarToggle() {
+        const menuToggle = document.querySelector('.menu-toggle');
+        const sidebar = document.getElementById('sidebar');
+        
+        if (menuToggle && sidebar) {
+            menuToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('collapsed');
+            });
+        }
+    }
+    
+    static setupMenuNavigation() {
+        const menuItems = document.querySelectorAll('.menu-item');
+        
+        menuItems.forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                
+                const section = item.dataset.section;
+                if (!section) return;
+                
+                // Update active item
+                menuItems.forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+                
+                // Update page title
+                const pageTitle = document.getElementById('pageTitle');
+                if (pageTitle) {
+                    pageTitle.textContent = item.textContent.trim();
+                }
+                
+                // Switch section
+                this.switchSection(section);
+            });
+        });
+    }
+    
+    static switchSection(section) {
+        // Update state
+        AppState.dashboard.currentSection = section;
+        
+        // Hide all sections
+        document.querySelectorAll('.dashboard-section').forEach(sec => {
+            sec.classList.remove('active');
         });
         
-        this.success('Member promoted successfully!');
-        this.loadMembers();
-      } catch (error) {
-        console.error('Promotion failed:', error);
-      } finally {
-        this.loading(false);
-      }
-    }
-  }
-
-  static async transferMember(id) {
-    const allBranches = Object.values(ZONES).flat();
-    
-    let branchList = '';
-    allBranches.forEach((branch, index) => {
-      branchList += `${index + 1}. ${branch}\n`;
-    });
-    
-    const newBranch = prompt(`Enter new branch for member ${id}:\n\nAvailable branches:\n${branchList}`);
-    
-    if (!newBranch || !allBranches.includes(newBranch)) {
-      if (newBranch) this.error('Invalid branch. Please select from the list.');
-      return;
+        // Show active section
+        const activeSection = document.getElementById(`${section}Section`);
+        if (activeSection) {
+            activeSection.classList.add('active');
+        }
+        
+        // Load section data
+        this.loadSectionData(section);
     }
     
-    const notes = prompt('Enter transfer notes (optional):');
+    static async loadSectionData(section) {
+        switch(section) {
+            case 'overview':
+                await this.loadOverview();
+                break;
+            case 'members':
+                await this.loadMembers();
+                break;
+            case 'masul':
+                await this.loadMasul();
+                break;
+            case 'branches':
+                await this.loadBranches();
+                break;
+            case 'promotions':
+                await this.loadPromotions();
+                break;
+            case 'transfers':
+                await this.loadTransfers();
+                break;
+            case 'reports':
+                await this.loadReports();
+                break;
+            case 'logs':
+                await this.loadLogs();
+                break;
+            case 'settings':
+                await this.loadSettings();
+                break;
+        }
+    }
     
-    if (confirm(`Transfer member to ${newBranch}?`)) {
-      this.loading(true, 'Transferring member...');
-      
-      try {
-        await this.api('transferMember', { 
-          memberId: id, 
-          newBranch: newBranch,
-          notes: notes || ''
+    static setupSearch() {
+        const searchInput = document.getElementById('globalSearch');
+        if (!searchInput) return;
+        
+        let searchTimeout;
+        
+        searchInput.addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            
+            searchTimeout = setTimeout(() => {
+                const query = e.target.value.trim();
+                AppState.dashboard.searchQuery = query;
+                
+                // Apply search to current section
+                this.applySearch(query);
+            }, AppConfig.DEBOUNCE_DELAY);
+        });
+    }
+    
+    static applySearch(query) {
+        const currentSection = AppState.dashboard.currentSection;
+        
+        switch(currentSection) {
+            case 'members':
+                this.filterMembersTable(query);
+                break;
+            case 'masul':
+                this.filterMasulTable(query);
+                break;
+            case 'branches':
+                this.filterBranchesTable(query);
+                break;
+            case 'logs':
+                this.filterLogsTable(query);
+                break;
+        }
+    }
+    
+    static setupFilters() {
+        // Setup zone and branch filters
+        this.populateFilterZones();
+        
+        // Setup filter apply events
+        const applyButtons = document.querySelectorAll('[onclick*="loadMembers"], [onclick*="loadMasul"], [onclick*="loadLogs"]');
+        applyButtons.forEach(button => {
+            const originalOnClick = button.getAttribute('onclick');
+            button.removeAttribute('onclick');
+            
+            button.addEventListener('click', () => {
+                // Update filters from current section
+                this.updateCurrentFilters();
+                
+                // Call original function
+                if (originalOnClick.includes('loadMembers')) {
+                    this.loadMembers();
+                } else if (originalOnClick.includes('loadMasul')) {
+                    this.loadMasul();
+                } else if (originalOnClick.includes('loadLogs')) {
+                    this.loadLogs();
+                }
+            });
+        });
+    }
+    
+    static populateFilterZones() {
+        const zoneFilters = document.querySelectorAll('select[id$="ZoneFilter"]');
+        
+        zoneFilters.forEach(filter => {
+            filter.innerHTML = '<option value="">All Zones</option>';
+            
+            Object.keys(ZonesData).forEach(zone => {
+                const option = document.createElement('option');
+                option.value = zone;
+                option.textContent = zone;
+                filter.appendChild(option);
+            });
+            
+            // Update branches when zone changes
+            filter.addEventListener('change', () => {
+                const zone = filter.value;
+                const branchFilterId = filter.id.replace('Zone', 'Branch');
+                const branchFilter = document.getElementById(branchFilterId);
+                
+                if (branchFilter) {
+                    branchFilter.innerHTML = '<option value="">All Branches</option>';
+                    
+                    if (zone && ZonesData[zone]) {
+                        ZonesData[zone].forEach(branch => {
+                            const option = document.createElement('option');
+                            option.value = branch;
+                            option.textContent = branch;
+                            branchFilter.appendChild(option);
+                        });
+                    }
+                }
+            });
+        });
+    }
+    
+    static updateCurrentFilters() {
+        const section = AppState.dashboard.currentSection;
+        
+        switch(section) {
+            case 'members':
+                AppState.dashboard.filters = {
+                    zone: document.getElementById('zoneFilter')?.value || '',
+                    branch: document.getElementById('branchFilter')?.value || '',
+                    level: document.getElementById('levelFilter')?.value || '',
+                    gender: document.getElementById('genderFilter')?.value || '',
+                    status: document.getElementById('statusFilter')?.value || ''
+                };
+                break;
+            case 'masul':
+                AppState.dashboard.filters = {
+                    zone: document.getElementById('masulZoneFilter')?.value || '',
+                    branch: document.getElementById('masulBranchFilter')?.value || ''
+                };
+                break;
+            case 'logs':
+                AppState.dashboard.filters = {
+                    dateFrom: document.getElementById('logDateFrom')?.value || '',
+                    dateTo: document.getElementById('logDateTo')?.value || '',
+                    actionType: document.getElementById('logActionType')?.value || '',
+                    userRole: document.getElementById('logUserRole')?.value || ''
+                };
+                break;
+        }
+    }
+    
+    static async loadDashboardData() {
+        try {
+            // Load statistics
+            await this.loadStatistics();
+            
+            // Load initial section data
+            await this.loadSectionData(AppState.dashboard.currentSection);
+            
+        } catch (error) {
+            console.error('Failed to load dashboard data:', error);
+            this.showError('Failed to load dashboard data');
+        }
+    }
+    
+    static async loadStatistics() {
+        try {
+            const result = await this.apiRequest('getStatistics');
+            
+            if (result.success) {
+                AppState.cache.statistics = result.data;
+                this.updateStatsDisplay(result.data);
+            }
+        } catch (error) {
+            console.error('Failed to load statistics:', error);
+        }
+    }
+    
+    static updateStatsDisplay(stats) {
+        // Update stat cards
+        const statsGrid = document.getElementById('statsGrid');
+        if (statsGrid) {
+            statsGrid.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-icon members">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-content">
+                        <span class="stat-number">${stats.totalMembers || 0}</span>
+                        <span class="stat-label">Total Members</span>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon masul">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                    <div class="stat-content">
+                        <span class="stat-number">${stats.totalMasul || 0}</span>
+                        <span class="stat-label">Mas'ul Leaders</span>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: linear-gradient(135deg, #17a2b8, #138496);">
+                        <i class="fas fa-male"></i>
+                    </div>
+                    <div class="stat-content">
+                        <span class="stat-number">${stats.brothers || 0}</span>
+                        <span class="stat-label">Brothers</span>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: linear-gradient(135deg, #e83e8c, #c2185b);">
+                        <i class="fas fa-female"></i>
+                    </div>
+                    <div class="stat-content">
+                        <span class="stat-number">${stats.sisters || 0}</span>
+                        <span class="stat-label">Sisters</span>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Update menu badges
+        const membersBadge = document.getElementById('membersBadge');
+        const masulBadge = document.getElementById('masulBadge');
+        const branchesBadge = document.getElementById('branchesBadge');
+        
+        if (membersBadge) membersBadge.textContent = stats.totalMembers || 0;
+        if (masulBadge) masulBadge.textContent = stats.totalMasul || 0;
+        if (branchesBadge) branchesBadge.textContent = stats.totalBranches || 0;
+        
+        // Create charts
+        this.createCharts(stats);
+    }
+    
+    static createCharts(stats) {
+        // Branch distribution chart
+        this.createBranchChart(stats.membersPerBranch || {});
+        
+        // Level distribution chart
+        this.createLevelChart(stats.membersPerLevel || {});
+    }
+    
+    static createBranchChart(data) {
+        const ctx = document.getElementById('branchChart');
+        if (!ctx) return;
+        
+        // Destroy existing chart
+        if (ctx.chartInstance) {
+            ctx.chartInstance.destroy();
+        }
+        
+        const labels = Object.keys(data);
+        const values = Object.values(data);
+        
+        ctx.chartInstance = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: values,
+                    backgroundColor: [
+                        '#228B22', '#32CD32', '#E67E22', '#2C3E50', '#17A2B8',
+                        '#6F42C1', '#20C997', '#FD7E14', '#DC3545'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Members Distribution by Branch'
+                    },
+                    legend: {
+                        position: 'right'
+                    }
+                }
+            }
+        });
+    }
+    
+    static createLevelChart(data) {
+        const ctx = document.getElementById('levelChart');
+        if (!ctx) return;
+        
+        // Destroy existing chart
+        if (ctx.chartInstance) {
+            ctx.chartInstance.destroy();
+        }
+        
+        const labels = Object.keys(data);
+        const values = Object.values(data);
+        
+        ctx.chartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Number of Members',
+                    data: values,
+                    backgroundColor: '#228B22',
+                    borderColor: '#1a6b1a',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Number of Members'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Member Level'
+                        }
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Members Distribution by Level'
+                    }
+                }
+            }
+        });
+    }
+    
+    static async loadMembers() {
+        try {
+            const filters = AppState.dashboard.filters;
+            const searchQuery = AppState.dashboard.searchQuery;
+            
+            // Build query parameters
+            const queryParams = { ...filters };
+            if (searchQuery) {
+                queryParams.search = searchQuery;
+            }
+            
+            // Make API request
+            const result = await this.apiRequest('getMembers', queryParams);
+            
+            if (result.success) {
+                AppState.cache.members = result.data || [];
+                this.renderMembersTable(result.data || []);
+            }
+        } catch (error) {
+            console.error('Failed to load members:', error);
+            this.showError('Failed to load members');
+        }
+    }
+    
+    static renderMembersTable(members) {
+        const tbody = document.getElementById('membersTableBody');
+        if (!tbody) return;
+        
+        if (members.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="11" class="empty-state">
+                        <i class="fas fa-users-slash"></i>
+                        <p>No members found</p>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        tbody.innerHTML = members.map(member => `
+            <tr>
+                <td>
+                    <input type="checkbox" class="member-checkbox" value="${member.id || member.globalId}">
+                </td>
+                <td>
+                    ${member.photoUrl ? 
+                        `<img src="${member.photoUrl}" class="member-photo" alt="${member.fullName}">` : 
+                        `<div class="photo-placeholder">${(member.fullName || '').charAt(0) || 'M'}</div>`
+                    }
+                </td>
+                <td><code>${member.id || member.globalId}</code></td>
+                <td><code>${member.recruitmentId}</code></td>
+                <td><strong>${member.fullName}</strong></td>
+                <td>
+                    <span class="badge ${member.gender === 'Brother' ? 'badge-primary' : 'badge-pink'}">
+                        ${member.gender}
+                    </span>
+                </td>
+                <td>${member.phone || member.phone1}</td>
+                <td>${member.branch}</td>
+                <td>
+                    <span class="badge badge-level-${(member.level || '').toLowerCase()}">
+                        ${member.level}
+                    </span>
+                </td>
+                <td>
+                    <span class="badge ${member.status === 'Active' ? 'badge-success' : 'badge-secondary'}">
+                        ${member.status}
+                    </span>
+                </td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="btn-action view" onclick="App.viewMember('${member.id || member.globalId}')">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn-action promote" onclick="App.promoteMember('${member.id || member.globalId}')">
+                            <i class="fas fa-arrow-up"></i>
+                        </button>
+                        <button class="btn-action transfer" onclick="App.transferMember('${member.id || member.globalId}')">
+                            <i class="fas fa-exchange-alt"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+        
+        // Setup select all checkbox
+        this.setupSelectAllCheckbox();
+    }
+    
+    static async loadMasul() {
+        try {
+            // For now, filter members with type='Masul'
+            // In a real implementation, you'd have a separate API endpoint
+            const allMembers = AppState.cache.members || [];
+            const masul = allMembers.filter(m => m.type === 'Masul');
+            
+            this.renderMasulTable(masul);
+        } catch (error) {
+            console.error('Failed to load masul:', error);
+            this.showError('Failed to load masul');
+        }
+    }
+    
+    static renderMasulTable(masul) {
+        const tbody = document.getElementById('masulTableBody');
+        if (!tbody) return;
+        
+        if (masul.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="10" class="empty-state">
+                        <i class="fas fa-user-shield"></i>
+                        <p>No Mas'ul leaders found</p>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        tbody.innerHTML = masul.map(m => `
+            <tr>
+                <td>
+                    ${m.photoUrl ? 
+                        `<img src="${m.photoUrl}" class="member-photo" alt="${m.fullName}">` : 
+                        `<div class="photo-placeholder">M</div>`
+                    }
+                </td>
+                <td><code>${m.id || m.globalId}</code></td>
+                <td><code>${m.recruitmentId}</code></td>
+                <td><strong>${m.fullName}</strong></td>
+                <td>${m.email}</td>
+                <td>${m.phone || m.phone1}</td>
+                <td>${m.branch}</td>
+                <td>${m.zone}</td>
+                <td>${m.recruitmentYear}</td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="btn-action view" onclick="App.viewMember('${m.id || m.globalId}')">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+    
+    static async loadBranches() {
+        try {
+            // Calculate branch statistics
+            const members = AppState.cache.members || [];
+            const branches = {};
+            
+            members.forEach(member => {
+                if (!member.branch) return;
+                
+                if (!branches[member.branch]) {
+                    branches[member.branch] = {
+                        members: 0,
+                        brothers: 0,
+                        sisters: 0,
+                        masul: 0,
+                        lastRegistration: null
+                    };
+                }
+                
+                branches[member.branch].members++;
+                
+                if (member.gender === 'Brother') {
+                    branches[member.branch].brothers++;
+                } else if (member.gender === 'Sister') {
+                    branches[member.branch].sisters++;
+                }
+                
+                if (member.type === 'Masul') {
+                    branches[member.branch].masul++;
+                }
+                
+                // Update last registration date
+                const regDate = new Date(member.registrationDate || member.Registration_Date);
+                if (!branches[member.branch].lastRegistration || regDate > branches[member.branch].lastRegistration) {
+                    branches[member.branch].lastRegistration = regDate;
+                }
+            });
+            
+            this.renderBranchesTable(branches);
+        } catch (error) {
+            console.error('Failed to load branches:', error);
+            this.showError('Failed to load branches');
+        }
+    }
+    
+    static renderBranchesTable(branches) {
+        const tbody = document.getElementById('branchesTableBody');
+        if (!tbody) return;
+        
+        const branchEntries = Object.entries(branches);
+        
+        if (branchEntries.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="9" class="empty-state">
+                        <i class="fas fa-code-branch"></i>
+                        <p>No branch data available</p>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        tbody.innerHTML = branchEntries.map(([branchName, stats]) => {
+            // Find zone for this branch
+            let zone = '';
+            Object.entries(ZonesData).forEach(([zoneName, branchList]) => {
+                if (branchList.includes(branchName)) {
+                    zone = zoneName;
+                }
+            });
+            
+            return `
+                <tr>
+                    <td>${zone}</td>
+                    <td><strong>${branchName}</strong></td>
+                    <td>${stats.members}</td>
+                    <td>${stats.brothers}</td>
+                    <td>${stats.sisters}</td>
+                    <td>${stats.masul}</td>
+                    <td>${stats.lastRegistration ? stats.lastRegistration.toLocaleDateString() : 'N/A'}</td>
+                    <td>
+                        <span class="badge badge-success">
+                            Active
+                        </span>
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn-action view" onclick="App.viewBranch('${branchName}')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+    
+    static setupSelectAllCheckbox() {
+        const selectAll = document.getElementById('selectAllMembers');
+        if (!selectAll) return;
+        
+        selectAll.addEventListener('change', (e) => {
+            const checkboxes = document.querySelectorAll('.member-checkbox');
+            checkboxes.forEach(cb => {
+                cb.checked = e.target.checked;
+            });
+        });
+    }
+    
+    static filterMembersTable(query) {
+        const rows = document.querySelectorAll('#membersTableBody tr');
+        
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(query.toLowerCase()) ? '' : 'none';
+        });
+    }
+    
+    static filterMasulTable(query) {
+        const rows = document.querySelectorAll('#masulTableBody tr');
+        
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(query.toLowerCase()) ? '' : 'none';
+        });
+    }
+    
+    static filterBranchesTable(query) {
+        const rows = document.querySelectorAll('#branchesTableBody tr');
+        
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(query.toLowerCase()) ? '' : 'none';
+        });
+    }
+    
+    static filterLogsTable(query) {
+        const rows = document.querySelectorAll('#logsTableBody tr');
+        
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(query.toLowerCase()) ? '' : 'none';
+        });
+    }
+    
+    static async viewMember(memberId) {
+        try {
+            const result = await this.apiRequest('getMemberDetails', { memberId });
+            
+            if (result.success) {
+                this.showMemberModal(result.data);
+            }
+        } catch (error) {
+            console.error('Failed to load member details:', error);
+            this.showError('Failed to load member details');
+        }
+    }
+    
+    static showMemberModal(memberData) {
+        // Create modal HTML
+        const modalHTML = `
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i class="fas fa-user"></i> Member Details
+                </h3>
+                <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+            </div>
+            
+            <div class="modal-body">
+                <div style="display: flex; gap: 2rem; margin-bottom: 2rem; flex-wrap: wrap;">
+                    <div>
+                        <img src="${memberData.Photo_URL || 'https://via.placeholder.com/200/228B22/FFFFFF?text=IIM'}" 
+                             style="width: 200px; height: 200px; object-fit: cover; border-radius: 10px; border: 3px solid #228B22;">
+                    </div>
+                    <div style="flex: 1; min-width: 300px;">
+                        <h4 style="color: #228B22; margin-bottom: 1rem;">${memberData.Full_Name}</h4>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div><strong>Global ID:</strong> <code>${memberData.Global_ID}</code></div>
+                            <div><strong>Recruitment ID:</strong> <code>${memberData.Recruitment_ID}</code></div>
+                            <div><strong>Type:</strong> ${memberData.Type}</div>
+                            <div><strong>Gender:</strong> ${memberData.Gender}</div>
+                            <div><strong>Branch:</strong> ${memberData.Branch}</div>
+                            <div><strong>Zone:</strong> ${memberData.Zone}</div>
+                            <div><strong>Level:</strong> ${memberData.Member_Level}</div>
+                            <div><strong>Status:</strong> ${memberData.Status}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 10px; margin-bottom: 1.5rem;">
+                    <h5 style="margin-top: 0; color: #495057; margin-bottom: 1rem;">
+                        <i class="fas fa-address-card"></i> Contact Information
+                    </h5>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div><strong>Phone 1:</strong> ${memberData.Phone_1 || 'N/A'}</div>
+                        <div><strong>Phone 2:</strong> ${memberData.Phone_2 || 'N/A'}</div>
+                        <div><strong>Email:</strong> ${memberData.Email || 'N/A'}</div>
+                        <div><strong>Address:</strong> ${memberData.Residential_Address || 'N/A'}</div>
+                    </div>
+                </div>
+                
+                ${memberData.Type === 'Member' ? `
+                    <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 10px;">
+                        <h5 style="margin-top: 0; color: #495057; margin-bottom: 1rem;">
+                            <i class="fas fa-user-circle"></i> Personal Information
+                        </h5>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div><strong>Father's Name:</strong> ${memberData.Father_Name || 'N/A'}</div>
+                            <div><strong>Birth Date:</strong> ${memberData.Birth_Date || 'N/A'}</div>
+                            <div><strong>Local Government:</strong> ${memberData.Local_Government || 'N/A'}</div>
+                            <div><strong>State:</strong> ${memberData.State || 'N/A'}</div>
+                            <div><strong>Registration Date:</strong> ${new Date(memberData.Registration_Date).toLocaleDateString()}</div>
+                        </div>
+                    </div>
+                ` : ''}
+            </div>
+            
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">
+                    Close
+                </button>
+                <button class="btn btn-primary" onclick="window.print()">
+                    <i class="fas fa-print"></i> Print
+                </button>
+            </div>
+        `;
+        
+        // Create and show modal
+        this.showModal(modalHTML, 'modal-lg');
+    }
+    
+    static async promoteMember(memberId) {
+        const newLevel = prompt('Enter new level (Bakiyatullah, Ansarullah, Ghalibun, Graduate):');
+        
+        if (!newLevel || !['Bakiyatullah', 'Ansarullah', 'Ghalibun', 'Graduate'].includes(newLevel)) {
+            this.showError('Invalid level. Please enter a valid level.');
+            return;
+        }
+        
+        const notes = prompt('Enter promotion notes (optional):');
+        
+        if (confirm(`Promote member to ${newLevel}?`)) {
+            try {
+                await this.apiRequest('promoteMember', {
+                    memberId,
+                    newLevel,
+                    notes: notes || ''
+                });
+                
+                this.showSuccess('Member promoted successfully!');
+                await this.loadMembers(); // Refresh members list
+            } catch (error) {
+                console.error('Promotion failed:', error);
+                this.showError('Promotion failed: ' + error.message);
+            }
+        }
+    }
+    
+    static async transferMember(memberId) {
+        const allBranches = Object.values(ZonesData).flat();
+        const newBranch = prompt(`Enter new branch for member ${memberId}:\n\nAvailable branches: ${allBranches.join(', ')}`);
+        
+        if (!newBranch || !allBranches.includes(newBranch)) {
+            this.showError('Invalid branch. Please select from the available branches.');
+            return;
+        }
+        
+        const notes = prompt('Enter transfer notes (optional):');
+        
+        if (confirm(`Transfer member to ${newBranch}?`)) {
+            try {
+                await this.apiRequest('transferMember', {
+                    memberId,
+                    newBranch,
+                    notes: notes || ''
+                });
+                
+                this.showSuccess('Member transferred successfully!');
+                await this.loadMembers(); // Refresh members list
+            } catch (error) {
+                console.error('Transfer failed:', error);
+                this.showError('Transfer failed: ' + error.message);
+            }
+        }
+    }
+    
+    static showModal(content, size = '') {
+        // Remove existing modal
+        const existingModal = document.querySelector('.modal-overlay');
+        if (existingModal) existingModal.remove();
+        
+        // Create modal overlay
+        const modalOverlay = document.createElement('div');
+        modalOverlay.className = 'modal-overlay active';
+        modalOverlay.innerHTML = `
+            <div class="modal-content ${size}">
+                ${content}
+            </div>
+        `;
+        
+        // Add to body
+        document.body.appendChild(modalOverlay);
+        
+        // Close on background click
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) {
+                modalOverlay.remove();
+            }
+        });
+    }
+    
+    static async exportData(type) {
+        if (!confirm(`Export ${type} data as CSV?`)) return;
+        
+        try {
+            const result = await this.apiRequest('exportData', { type });
+            
+            if (result.success && result.data.downloadUrl) {
+                window.open(result.data.downloadUrl, '_blank');
+                this.showSuccess(`Exported ${type} data successfully!`);
+            }
+        } catch (error) {
+            console.error('Export failed:', error);
+            this.showError('Export failed: ' + error.message);
+        }
+    }
+    
+    static async backupSystem() {
+        if (!confirm('Create system backup? This may take a moment.')) return;
+        
+        try {
+            const result = await this.apiRequest('backupSystem');
+            
+            if (result.success && result.data.backupUrl) {
+                window.open(result.data.backupUrl, '_blank');
+                this.showSuccess('System backup created successfully!');
+            }
+        } catch (error) {
+            console.error('Backup failed:', error);
+            this.showError('Backup failed: ' + error.message);
+        }
+    }
+    
+    static async loadPromotions() {
+        // Implementation for promotions
+        console.log('Loading promotions...');
+    }
+    
+    static async loadTransfers() {
+        // Implementation for transfers
+        console.log('Loading transfers...');
+    }
+    
+    static async loadReports() {
+        // Implementation for reports
+        console.log('Loading reports...');
+    }
+    
+    static async loadLogs() {
+        try {
+            const result = await this.apiRequest('getRecentActivity');
+            
+            if (result.success) {
+                this.renderLogsTable(result.data || []);
+            }
+        } catch (error) {
+            console.error('Failed to load logs:', error);
+            this.showError('Failed to load logs');
+        }
+    }
+    
+    static renderLogsTable(logs) {
+        const tbody = document.getElementById('logsTableBody');
+        if (!tbody) return;
+        
+        if (logs.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="empty-state">
+                        <i class="fas fa-history"></i>
+                        <p>No activity logs found</p>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        tbody.innerHTML = logs.map(log => `
+            <tr>
+                <td>${new Date(log.timestamp).toLocaleString()}</td>
+                <td><strong>${log.action}</strong></td>
+                <td>${log.description}</td>
+                <td>
+                    <span class="badge ${log.userRole === 'admin' ? 'badge-primary' : 'badge-info'}">
+                        ${log.userRole || 'System'}
+                    </span>
+                </td>
+                <td>${log.userBranch || 'N/A'}</td>
+                <td>${log.clientIp || 'N/A'}</td>
+            </tr>
+        `).join('');
+    }
+    
+    static async loadSettings() {
+        // Load current settings
+        console.log('Loading settings...');
+    }
+    
+    static async saveSettings() {
+        const adminCode = document.getElementById('adminAccessCode')?.value;
+        const masulCode = document.getElementById('masulAccessCode')?.value;
+        
+        if (!adminCode && !masulCode) {
+            this.showError('Please enter at least one access code');
+            return;
+        }
+        
+        try {
+            await this.apiRequest('updateSettings', {
+                adminAccessCode: adminCode,
+                masulAccessCode: masulCode
+            });
+            
+            this.showSuccess('Settings updated successfully!');
+        } catch (error) {
+            console.error('Settings update failed:', error);
+            this.showError('Failed to update settings');
+        }
+    }
+    
+    /**
+     * ========================
+     * LANDING PAGE
+     * ========================
+     */
+    
+    static async initLandingPage() {
+        console.log('🏠 Initializing landing page...');
+        
+        // Update current year
+        const yearElement = document.getElementById('currentYear');
+        if (yearElement) {
+            yearElement.textContent = new Date().getFullYear();
+        }
+        
+        // Load statistics
+        await this.loadLandingStatistics();
+    }
+    
+    static async loadLandingStatistics() {
+        try {
+            const response = await fetch(AppConfig.API_URL);
+            
+            if (response.ok) {
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Update stats on landing page
+                    const totalMembers = document.getElementById('totalMembers');
+                    const totalMasul = document.getElementById('totalMasul');
+                    const totalBranches = document.getElementById('totalBranches');
+                    const totalZones = document.getElementById('totalZones');
+                    
+                    if (totalMembers) totalMembers.textContent = data.data?.totalMembers || 0;
+                    if (totalMasul) totalMasul.textContent = data.data?.totalMasul || 0;
+                    if (totalBranches) totalBranches.textContent = data.data?.totalBranches || Object.values(ZonesData).flat().length;
+                    if (totalZones) totalZones.textContent = Object.keys(ZonesData).length;
+                }
+            }
+        } catch (error) {
+            console.log('Using default stats for landing page');
+        }
+    }
+    
+    /**
+     * ========================
+     * UTILITY FUNCTIONS
+     * ========================
+     */
+    
+    static showLoading(show, message = 'Loading...') {
+        AppState.ui.isLoading = show;
+        
+        let loader = document.getElementById('globalLoader');
+        
+        if (show) {
+            if (!loader) {
+                loader = document.createElement('div');
+                loader.id = 'globalLoader';
+                loader.innerHTML = `
+                    <div class="loading-spinner"></div>
+                    <p>${message}</p>
+                `;
+                document.body.appendChild(loader);
+            } else {
+                loader.style.display = 'flex';
+                loader.querySelector('p').textContent = message;
+            }
+        } else if (loader) {
+            loader.style.display = 'none';
+        }
+    }
+    
+    static showToast(message, type = 'info', duration = 5000) {
+        const toastContainer = document.getElementById('toastContainer') || (() => {
+            const container = document.createElement('div');
+            container.className = 'toast-container';
+            container.id = 'toastContainer';
+            document.body.appendChild(container);
+            return container;
+        })();
+        
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        
+        const icon = {
+            success: 'fa-check-circle',
+            error: 'fa-exclamation-circle',
+            warning: 'fa-exclamation-triangle',
+            info: 'fa-info-circle'
+        }[type];
+        
+        toast.innerHTML = `
+            <div class="toast-icon">
+                <i class="fas ${icon}"></i>
+            </div>
+            <div class="toast-content">
+                <div class="toast-message">${message}</div>
+            </div>
+            <button class="toast-close" onclick="this.parentElement.remove()">×</button>
+        `;
+        
+        toastContainer.appendChild(toast);
+        
+        // Auto remove after duration
+        setTimeout(() => {
+            if (toast.parentElement) {
+                toast.remove();
+            }
+        }, duration);
+        
+        // Limit to 5 toasts
+        const toasts = toastContainer.querySelectorAll('.toast');
+        if (toasts.length > 5) {
+            toasts[0].remove();
+        }
+    }
+    
+    static showSuccess(message) {
+        this.showToast(message, 'success', 3000);
+    }
+    
+    static showError(message) {
+        this.showToast(message, 'error', 5000);
+    }
+    
+    static showWarning(message) {
+        this.showToast(message, 'warning', 4000);
+    }
+    
+    static showInfo(message) {
+        this.showToast(message, 'info', 4000);
+    }
+    
+    static showFieldError(fieldId, message) {
+        const field = document.getElementById(fieldId);
+        if (!field) return;
+        
+        field.classList.add('error');
+        
+        const errorElement = field.nextElementSibling;
+        if (errorElement && errorElement.classList.contains('error-message')) {
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+        }
+    }
+    
+    static clearFieldError(fieldId) {
+        const field = document.getElementById(fieldId);
+        if (!field) return;
+        
+        field.classList.remove('error');
+        
+        const errorElement = field.nextElementSibling;
+        if (errorElement && errorElement.classList.contains('error-message')) {
+            errorElement.style.display = 'none';
+        }
+    }
+    
+    static showApiConfigModal() {
+        const modalHTML = `
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i class="fas fa-cogs"></i> Backend Configuration
+                </h3>
+                <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+            </div>
+            
+            <div class="modal-body">
+                <p>Please enter your Google Apps Script Web App URL:</p>
+                
+                <div class="form-group">
+                    <label>Backend URL:</label>
+                    <input type="text" id="apiUrlInput" class="form-control" 
+                           value="${AppConfig.API_URL}" 
+                           placeholder="https://script.google.com/macros/s/.../exec">
+                </div>
+                
+                <div class="help-text" style="margin: 1rem 0;">
+                    <strong>How to get this URL:</strong>
+                    <ol>
+                        <li>Deploy your Google Script as Web App</li>
+                        <li>Select "Execute as: Me" and "Who has access: Anyone"</li>
+                        <li>Copy the provided URL</li>
+                        <li>Paste it above</li>
+                    </ol>
+                </div>
+                
+                <div id="testResult" style="display: none; margin: 1rem 0;"></div>
+            </div>
+            
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">
+                    Cancel
+                </button>
+                <button class="btn btn-primary" onclick="App.saveApiUrl()">
+                    <i class="fas fa-save"></i> Save
+                </button>
+                <button class="btn btn-info" onclick="App.testApiConnection()">
+                    <i class="fas fa-plug"></i> Test Connection
+                </button>
+            </div>
+        `;
+        
+        this.showModal(modalHTML);
+    }
+    
+    static async testApiConnection() {
+        const urlInput = document.getElementById('apiUrlInput');
+        const testResult = document.getElementById('testResult');
+        
+        if (!urlInput || !testResult) return;
+        
+        const url = urlInput.value.trim();
+        if (!url) {
+            this.showError('Please enter a URL');
+            return;
+        }
+        
+        testResult.style.display = 'block';
+        testResult.innerHTML = `
+            <div class="help-text" style="background: #fff3cd; border-color: #ffeaa7;">
+                <i class="fas fa-sync fa-spin"></i> Testing connection...
+            </div>
+        `;
+        
+        try {
+            const response = await fetch(url);
+            
+            if (response.ok) {
+                const data = await response.json();
+                
+                if (data.success) {
+                    testResult.innerHTML = `
+                        <div class="help-text" style="background: #d4edda; border-color: #c3e6cb;">
+                            <i class="fas fa-check-circle"></i> Connection successful!
+                            <div>System: ${data.system}, Version: ${data.version}</div>
+                        </div>
+                    `;
+                } else {
+                    testResult.innerHTML = `
+                        <div class="help-text" style="background: #f8d7da; border-color: #f5c6cb;">
+                            <i class="fas fa-exclamation-triangle"></i> Backend error: ${data.message}
+                        </div>
+                    `;
+                }
+            } else {
+                testResult.innerHTML = `
+                    <div class="help-text" style="background: #f8d7da; border-color: #f5c6cb;">
+                        <i class="fas fa-times-circle"></i> HTTP ${response.status}: ${response.statusText}
+                    </div>
+                `;
+            }
+        } catch (error) {
+            testResult.innerHTML = `
+                <div class="help-text" style="background: #f8d7da; border-color: #f5c6cb;">
+                    <i class="fas fa-unlink"></i> Connection failed: ${error.message}
+                </div>
+            `;
+        }
+    }
+    
+    static saveApiUrl() {
+        const urlInput = document.getElementById('apiUrlInput');
+        if (!urlInput) return;
+        
+        const url = urlInput.value.trim();
+        if (!url) {
+            this.showError('Please enter a URL');
+            return;
+        }
+        
+        AppConfig.API_URL = url;
+        localStorage.setItem('iim_api_url', url);
+        
+        this.showSuccess('API URL saved successfully!');
+        
+        // Close modal
+        const modal = document.querySelector('.modal-overlay');
+        if (modal) modal.remove();
+        
+        // Reload page if on login page
+        if (window.location.pathname.includes('login.html')) {
+            window.location.reload();
+        }
+    }
+    
+    static setupGlobalEvents() {
+        // Handle offline/online events
+        window.addEventListener('offline', () => {
+            this.showWarning('You are offline. Some features may not work.');
         });
         
-        this.success('Member transferred successfully!');
-        this.loadMembers();
-      } catch (error) {
-        console.error('Transfer failed:', error);
-      } finally {
-        this.loading(false);
-      }
+        window.addEventListener('online', () => {
+            this.showSuccess('Connection restored.');
+        });
+        
+        // Handle page visibility
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                this.validateSession();
+            }
+        });
+        
+        // Prevent form submission on Enter in search fields
+        document.addEventListener('keydown', (e) => {
+            if (e.target.matches('input[type="search"], input[type="text"]') && e.key === 'Enter') {
+                e.preventDefault();
+            }
+        });
     }
-  }
-
-  static async exportData(type) {
-    if (!confirm(`Export ${type} data as CSV?`)) return;
     
-    this.loading(true, 'Exporting data...');
+    static updateNavigationButtons() {
+        const prevButtons = document.querySelectorAll('.prev-tab, .btn-secondary');
+        const nextButtons = document.querySelectorAll('.next-tab, .btn-primary');
+        
+        // Update previous buttons
+        prevButtons.forEach(btn => {
+            if (AppState.registration.currentStep === 1) {
+                btn.disabled = true;
+            } else {
+                btn.disabled = false;
+            }
+        });
+        
+        // Update next buttons
+        nextButtons.forEach(btn => {
+            if (AppState.registration.currentStep === AppState.registration.totalSteps) {
+                btn.style.display = 'none';
+            } else {
+                btn.style.display = '';
+            }
+        });
+    }
     
-    try {
-      const res = await this.api('exportData', { type: type });
-      const data = res.data;
-      
-      if (data && data.downloadUrl) {
-        window.open(data.downloadUrl, '_blank');
-        this.success(`Export completed! File: ${data.fileName}`);
-      } else {
-        throw new Error('No download URL received');
-      }
-    } catch (error) {
-      console.error('Export failed:', error);
-      this.error('Export failed: ' + (error.message || 'Unknown error'));
-    } finally {
-      this.loading(false);
+    static initMasulForm() {
+        // Similar to member form but with different fields
+        console.log('Initializing Mas\'ul form...');
     }
-  }
-
-  static async backupSystem() {
-    if (!confirm('Create system backup? This may take a moment.')) return;
-    
-    this.loading(true, 'Creating backup...');
-    
-    try {
-      const res = await this.api('backupSystem');
-      const data = res.data;
-      
-      if (data && data.backupUrl) {
-        window.open(data.backupUrl, '_blank');
-        this.success('Backup created successfully!');
-      } else {
-        throw new Error('No backup URL received');
-      }
-    } catch (error) {
-      console.error('Backup failed:', error);
-      this.error('Backup failed: ' + (error.message || 'Unknown error'));
-    } finally {
-      this.loading(false);
-    }
-  }
-
-  static logout() {
-    if (confirm('Are you sure you want to logout?')) {
-      localStorage.clear();
-      this.success('Logged out successfully');
-      setTimeout(() => {
-        location.href = 'index.html';
-      }, 1000);
-    }
-  }
-
-  static switchSection(section) {
-    const item = document.querySelector(`.menu-item[data-section="${section}"]`);
-    if (item) {
-      item.click();
-    }
-  }
 }
 
-// Initialize app when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-  console.log('DOM loaded, initializing App...');
-  App.init();
-});
+/**
+ * 🚀 APPLICATION BOOTSTRAP
+ */
 
-// Make App available globally
-window.App = App;
-console.log('App.js loaded successfully');
+// Make Application globally available
+window.App = Application;
+
+// Initialize application when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log('📄 DOM loaded, initializing Application...');
+        App.init();
+    });
+} else {
+    console.log('📄 DOM already loaded, initializing Application...');
+    App.init();
+}
+
+console.log('✅ app.js v5.0.0 loaded successfully');
